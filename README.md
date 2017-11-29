@@ -1,2 +1,2 @@
 # RandomForestMicroCT
-Random forest microCT for sementation of 3D images
+Random forest segmentation for 3D microCT images
