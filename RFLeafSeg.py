@@ -33,10 +33,12 @@ hess_range = [4,64]
 hess_step = 4
 num_feature_layers = 36 # grid and phase recon; plus gaussian blurs; plus hessian filters
 
+
 # Import label encoder
 labenc = LabelEncoder()
 
 
+# Generate feature layers based on grid/phase stacks and local thickness stack
 def GenerateFL2(gridimg_in, phaseimg_in, localthick_cellvein_in, sub_slices, section): 
     # Define image dimensions (img_dim1, img_dim2), number of slices (num_slices), and rotation parameters (rot_i, rot_j, num_rot)
     if(section=="transverse"):
@@ -122,7 +124,7 @@ def GenerateFL2(gridimg_in, phaseimg_in, localthick_cellvein_in, sub_slices, sec
     return FL_reshape
 
 
-
+# Load labeled data stack
 def LoadLabelData(gridimg_in,sub_slices,section):
     # Define image dimensions
     if(section=="transverse"):
@@ -158,6 +160,7 @@ def LoadLabelData(gridimg_in,sub_slices,section):
     img_label_reshape = labenc.fit_transform(img_label_reshape)
     return(img_label_reshape)
 
+# Load generic CT stack
 def LoadCTStack(gridimg_in,sub_slices,section):
     # Define image dimensions
     if(section=="transverse"):
@@ -188,6 +191,7 @@ def LoadCTStack(gridimg_in,sub_slices,section):
 
     return(labelimg_in_rot_sub)
 
+# Get dimensions of CT stack
 def GetStackDims(labelimg_in,section):
     if(section=="transverse"):
         img_dim1 = labelimg_in.shape[1]
@@ -212,6 +216,8 @@ def GetStackDims(labelimg_in,section):
         num_rot = 1
     return([num_slices,img_dim1,img_dim2])
 
+
+# Use random forest model to predict entire CT stack on a slice-by-slice basis
 def RFPredictCTStack(rf_transverse,gridimg_in, phaseimg_in, localthick_cellvein_in, section):  
     # Define distance from lower/upper image boundary
     dist_edge = np.ones(gridimg_in.shape)
@@ -273,6 +279,8 @@ def RFPredictCTStack(rf_transverse,gridimg_in, phaseimg_in, localthick_cellvein_
             order="F")
     return(RFPredictCTStack_out)
 
+
+# Calculate local thickness; from Porespy library
 def local_thickness(im):
     if im.ndim == 2:
         from skimage.morphology import square
@@ -290,6 +298,8 @@ def local_thickness(im):
         im_new = spim.binary_erosion(input=im, structure=disc(1))*im_new
     return im_new
 
+
+# Match array dimensions
 def match_array_dim(stack1,stack2):
     if stack1.shape[0] > stack2.shape[0]:
         stack1 = stack1[0:stack2.shape[0],:,:]
