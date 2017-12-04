@@ -1,7 +1,7 @@
 # Functions for Random Forest 3D Leaf Segmentation Algorithm
 
 
-# Generate feature layer. Requires four inputs: 1) List of image file names, 2) first image dimension, 3) second image dimension, and 4) number of feature layers. This all needs to be updated for more seemless feature layer selection.
+# Import libraries and modules
 import numpy as np
 import skimage.io as io
 from skimage.filters import median, sobel, hessian, gabor, gaussian, scharr
@@ -39,6 +39,12 @@ labenc = LabelEncoder()
 
 
 # Generate feature layers based on grid/phase stacks and local thickness stack
+# Requires five user inputs: 
+    # 1) grid recon stack (assumes transverse section)
+    # 2) phase recon stack (assumes transverse section)
+    # 3) local thickness stack (assumes transverse section)
+    # 4) list of sub-slices for training/testing
+    # 5) section of interest (i.e. transverse, paradermal, or longitudinal)
 def GenerateFL2(gridimg_in, phaseimg_in, localthick_cellvein_in, sub_slices, section): 
     # Define image dimensions (img_dim1, img_dim2), number of slices (num_slices), and rotation parameters (rot_i, rot_j, num_rot)
     if(section=="transverse"):
