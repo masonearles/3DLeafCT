@@ -5,7 +5,6 @@
 import numpy as np
 import skimage.io as io
 from skimage.filters import median, sobel, hessian, gabor, gaussian, scharr
-import VarianceFilter
 from sklearn.preprocessing import LabelEncoder
 import scipy as sp
 from skimage.segmentation import clear_border
@@ -318,6 +317,15 @@ def match_array_dim(stack1,stack2):
     if stack1.shape[2] > stack2.shape[2]:
         stack1 = stack1[:,:,0:stack2.shape[2]]
     else:
-        stack2 = stack2[:,:,0:stack2.shape[2]]
+        stack2 = stack2[:,:,0:stack1.shape[2]]
 
     return stack1, stack2
+
+
+# Threshold grid and phase images and add the IAS together
+def Threshold_GridPhase(grid_img, phase_img, Th_grid, Th_phase):
+    tmp = np.zeros(grid_img.shape)
+    tmp[grid_img < Th_grid] = 1
+    tmp[grid_img >= Th_grid] = 0
+    tmp[phase_img < Th_phase] = 1
+    return tmp 
