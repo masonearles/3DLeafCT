@@ -13,6 +13,9 @@ from scipy import misc
 from skimage.util import invert
 from skimage import transform
 from sklearn.metrics import confusion_matrix
+from tabulate import tabulate
+import pickle
+from PIL import Image
 
 
 #image loading
@@ -112,8 +115,80 @@ def predict_testset(rf_t,FL_test): #predict single slices from dataset
 
 def make_conf_matrix(L_test,class_p):
     # Generate confusion matrix for transverse section
-    pd.crosstab(L_test, class_p, rownames=['Actual'], colnames=['Predicted'])
+    df = pd.crosstab(L_test, class_p, rownames=['Actual'], colnames=['Predicted'])
+    print(tabulate(df, headers='keys', tablefmt='pqsl'))
 
 def make_normconf_matrix(L_test,class_p):
     # Generate normalized confusion matrix for transverse section
-    pd.crosstab(L_test, class_p, rownames=['Actual'], colnames=['Predicted'], normalize='index')
+    df = pd.crosstab(L_test, class_p, rownames=['Actual'], colnames=['Predicted'], normalize='index')
+    print(tabulate(df, headers='keys', tablefmt='pqsl'))
+
+def save_trainmodel(rf_t,FL_train,FL_test,Label_train,Label_test):
+    #Save model to disk; This can be a pretty large file -- ~2 Gb
+    print("***SAVING TRAINED MODEL***")
+    filename = '../images/RF_model.sav'
+    pickle.dump(rf_t, open(filename, 'wb'))
+    print("***SAVING FEATURE LAYER ARRAYS***")
+    #save training and testing feature layer array
+    io.imsave('../images/FL_train.tif',FL_train)
+    io.imsave('../images/FL_test.tif',FL_test)
+    print("***SAVING LABEL IMAGE VECTORS***")
+    #save label image vectors
+    io.imsave('../images/Label_train.tif',Label_train)
+    io.imsave('../images/Label_test.tif',Label_test)
+
+def load_trainmodel():
+    print("***LOADING TRAINED MODEL***")
+    #load the model from disk
+    filename = '../images/RF_model.sav'
+    rf = pickle.load(open(filename, 'rb'))
+    print("***LOADING FEATURE LAYER ARRAYS***")
+    FL_tr = io.imread('../images/FL_train.tif')
+    FL_te = io.imread('../images/FL_test.tif')
+    print("***LOADING LABEL IMAGE VECTORS***")
+    Label_tr = io.imread('../images/Label_train.tif')
+    Label_te = io.imread('../images/Label_test.tif')
+    return rf,FL_tr,FL_te,Label_tr,Label_te
+
+def reshape_arrays(class_prediction_prob,class_prediction,Label_test,FL_test,label_stack):
+    print("***RESHAPING ARRAYS***")
+    # Reshape arrays for plotting images of class probabilities, predicted classes, observed classes, and feature layer of interest
+    prediction_prob_imgs = class_prediction_prob.reshape((
+        -1,
+        label_stack.shape[1],
+        label_stack.shape[2],
+        4),
+        order="F")
+    prediction_imgs = class_prediction.reshape((
+        -1,
+        label_stack.shape[1],
+        label_stack.shape[2]),
+        order="F")
+    observed_imgs = Label_test.reshape((
+        -1,
+        label_stack.shape[1],
+        label_stack.shape[2]),
+        order="F")
+    FL_imgs = FL_test.reshape((
+        -1,
+        label_stack.shape[1],
+        label_stack.shape[2],
+        36),
+        order="F")
+    return prediction_prob_imgs,prediction_imgs,observed_imgs,FL_imgs
+
+def check_images(prediction_prob_imgs,prediction_imgs,observed_imgs,FL_imgs,phaserec_stack):
+    # Plot images of class probabilities, predicted classes, observed classes, and feature layer of interest
+    for i in range(0,prediction_imgs.shape[0]):
+#        img1 = Image.open(prediction_prob_imgs[i,:,:,1], cmap="RdYlBu")
+        img1 = prediction_prob_imgs[i,:,:,1]
+        img1 = Image.fromarray(img1)
+        img1.show()
+        # io.imshow(observed_imgs[i,:,:])
+        # io.show()
+        # io.imshow(prediction_imgs[i,:,:])
+        # io.show()
+        # io.imshow(phaserec_stack[260,:,:], cmap="gray")
+        # io.show()
+        # io.imshow(FL_imgs[0,:,:,26], cmap="gray")
+        # io.show()

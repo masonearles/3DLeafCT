@@ -63,12 +63,14 @@ while selection != "7":
 
     elif selection=="2": #train model
         selection3="1"
-        while selection3 != "4":
+        while selection3 != "6":
             print("********_____TRAIN MODEL MENU_____********")
             print("1. Define image subsets for training and testing.")
             print("2. Display some images from each stack and stack dimensions for QC.")
             print("3. Train model.")
-            print("4. Go back")
+            print("4. Save trained model and feature layer arrays to disk.")
+            print("5. Load trained model and feature layer arrays from disk.")
+            print("6. Go back")
             selection3 = str(input("Select an option (type a number, press enter):\n"))
             if selection3=="1": #define image subsets for training and testing
                 print("***DEFINING IMAGE SUBSETS***")
@@ -84,7 +86,11 @@ while selection != "7":
                 ImgLoadProcess.displayImages_displayDims(gridrec_stack,phaserec_stack,label_stack,localthick_stack,gridphase_train_slices_subset,gridphase_test_slices_subset,label_train_slices_subset,label_test_slices_subset)
             elif selection3=="3": #train model
                 rf_transverse,FL_train,FL_test,Label_train,Label_test = ImgLoadProcess.train_model(gridrec_stack,phaserec_stack,label_stack,localthick_stack,gridphase_train_slices_subset,gridphase_test_slices_subset,label_train_slices_subset,label_test_slices_subset)
-            elif selection3=="4": #go back one step
+            elif selection3=="4": #save trained model and other arrays from step 3 to disk
+                ImgLoadProcess.save_trainmodel(rf_transverse,FL_train,FL_test,Label_train,Label_test)
+            elif selection3=="5": #load trained model and other arrays from step 4, to skip 1-4 if already ran
+                rf_transverse,FL_train,FL_test,Label_train,Label_test = ImgLoadProcess.load_trainmodel()
+            elif selection3=="6": #go back one step
                 print("Going back one step...")
             else:
                 print("Not a valid choice.")
@@ -111,15 +117,16 @@ while selection != "7":
             if selection4=="1": #predict single slices from test dataset
                 class_prediction, class_prediction_prob = ImgLoadProcess.predict_testset(rf_transverse,FL_test)
             elif selection4=="2": #generate confusion matrices
-                print("This step needs updating!")
-                print("figure out why matrices aren't actually printing")
                 print("Confusion Matrix")
                 ImgLoadProcess.make_conf_matrix(Label_test,class_prediction)
+                print("___________________________________________")
                 print("Normalized Confusion Matrix")
                 ImgLoadProcess.make_normconf_matrix(Label_test,class_prediction)
             elif selection4=="3": #plot images
-                print("You selected option 3")
                 print("This step needs updating!")
+                prediction_prob_imgs,prediction_imgs,observed_imgs,FL_imgs = ImgLoadProcess.reshape_arrays(class_prediction_prob,class_prediction,Label_test,FL_test,label_stack)
+                ImgLoadProcess.check_images(prediction_prob_imgs,prediction_imgs,observed_imgs,FL_imgs,phaserec_stack)
+                print("figure out why .png image that opens isn't displaying properly...") 
             elif selection4=="4": #go back one step
                 print("Going back one step...")
             else:
