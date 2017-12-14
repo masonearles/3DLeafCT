@@ -133,22 +133,20 @@ while selection != "7":
                 print("Not a valid choice.")
     elif selection=="5": #predict all slices in 3d stack
 		selection5="1"
-		while selecction5 != "1"
+		while selection5 != "5":
 			print("********_____FULL STACK PREDICTIONS MENU_____********")
 			print("1. Predict full stack")
 			print("2. Write stack as tiff file")
 			print("3. Go back")
 			selection5 = str(input("Select an option (type a number, press enter):\n"))
-			if selection5 = "1":
-				RFPredictCTStack_out = RFPredictCTStack(rf_transverse,gr_s, pr_s, localthick_stack,"transverse")
-			elif selection5 = "2":
+			if selection5=="1":
+				RFLeafSeg.RFPredictCTStack_out = RFPredictCTStack(rf_transverse,gr_s, pr_s, localthick_stack,"transverse")
+			elif selection5=="2":
 				io.imsave("labeled_stack.tif", RFPredictCTStack_out)
 			elif selection4=="3": #go back one step
-                print("Going back one step...")
+				print("Going back one step...")
 			else:
-                print("Not a valid choice.")
-        print("You selected option 5")
-        print("This step needs updating!")
+				print("Not a valid choice.")
     elif selection=="6": #performance metrics
         print("You selected option 6")
         print("This step needs updating!")
