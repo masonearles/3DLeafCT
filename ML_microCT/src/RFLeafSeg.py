@@ -38,13 +38,13 @@ labenc = LabelEncoder()
 
 
 # Generate feature layers based on grid/phase stacks and local thickness stack
-# Requires five user inputs: 
+# Requires five user inputs:
     # 1) grid recon stack (assumes transverse section)
     # 2) phase recon stack (assumes transverse section)
     # 3) local thickness stack (assumes transverse section)
     # 4) list of sub-slices for training/testing
     # 5) section of interest (i.e. transverse, paradermal, or longitudinal)
-def GenerateFL2(gridimg_in, phaseimg_in, localthick_cellvein_in, sub_slices, section): 
+def GenerateFL2(gridimg_in, phaseimg_in, localthick_cellvein_in, sub_slices, section):
     # Define image dimensions (img_dim1, img_dim2), number of slices (num_slices), and rotation parameters (rot_i, rot_j, num_rot)
     if(section=="transverse"):
         img_dim1 = gridimg_in.shape[1]
@@ -67,26 +67,31 @@ def GenerateFL2(gridimg_in, phaseimg_in, localthick_cellvein_in, sub_slices, sec
         rot_i = 1
         rot_j = 0
         num_rot = 1
-    
+
+    #match array dimensions again
+    gridimg_in, phaseimg_in = match_array_dim(gridimg_in,phaseimg_in)
+
     # Rotate stacks to correct section view and select subset of slices
     gridimg_in_rot = np.rot90(gridimg_in, k=num_rot, axes=(rot_i,rot_j))
     phaseimg_in_rot = np.rot90(phaseimg_in, k=num_rot, axes=(rot_i,rot_j))
     gridimg_in_rot_sub = gridimg_in_rot[sub_slices,:,:]
-    phaseimg_in_rot_sub = phaseimg_in_rot[sub_slices,:,:]   
-    
+    phaseimg_in_rot_sub = phaseimg_in_rot[sub_slices,:,:]
+
     # Define distance from lower/upper image boundary
     dist_edge = np.ones(gridimg_in.shape)
-    dist_edge[:,(0,1,2,3,4,gridimg_in.shape[1]-4,gridimg_in.shape[1]-3,gridimg_in.shape[1]-2,gridimg_in.shape[1]-1),:] = 0
-    dist_edge = transform.rescale(dist_edge, 0.25)
+    dist_edge[:,(0,1,2,3,4,gridimg_in.shape[1]-5,gridimg_in.shape[1]-4,gridimg_in.shape[1]-3,gridimg_in.shape[1]-2,gridimg_in.shape[1]-1),:] = 0
+    dist_edge = transform.rescale(dist_edge, 0.25,clip=True,preserve_range=True)
     dist_edge_FL = spim.distance_transform_edt(dist_edge)
-    dist_edge_FL = np.multiply(transform.rescale(dist_edge_FL,4),4)
-    
+    dist_edge_FL = np.multiply(transform.rescale(dist_edge_FL,4,clip=True,preserve_range=True),4)
+    if dist_edge_FL.shape[1]>gridimg_in.shape[1]:
+        dist_edge_FL = dist_edge_FL[:,0:gridimg_in.shape[1],:]
+
     # Define empty numpy array for feature layers (FL)
     FL = np.empty((len(sub_slices),img_dim1,img_dim2,num_feature_layers), dtype=np.float64)
-    
+
     # Populate FL array with feature layers using custom filters, etc.
     for i in range(0,len(sub_slices)):
-        FL[i,:,:,0] = gridimg_in_rot_sub[i,:,:] 
+        FL[i,:,:,0] = gridimg_in_rot_sub[i,:,:]
         FL[i,:,:,1] = phaseimg_in_rot_sub[i,:,:]
         FL[i,:,:,2] = gaussian(FL[i,:,:,0],8)
         FL[i,:,:,3] = gaussian(FL[i,:,:,1],8)
@@ -111,7 +116,7 @@ def GenerateFL2(gridimg_in, phaseimg_in, localthick_cellvein_in, sub_slices, sec
         FL[i,:,:,22] = gaussian(FL[i,:,:,20],8)
         FL[i,:,:,23] = gaussian(FL[i,:,:,21],8)
         FL[i,:,:,24] = gaussian(FL[i,:,:,20],32)
-        FL[i,:,:,25] = gaussian(FL[i,:,:,21],32) 
+        FL[i,:,:,25] = gaussian(FL[i,:,:,21],32)
         FL[i,:,:,26] = gaussian(FL[i,:,:,20],64)
         FL[i,:,:,27] = gaussian(FL[i,:,:,21],64)
         FL[i,:,:,28] = gaussian(FL[i,:,:,20],128)
@@ -153,14 +158,14 @@ def LoadLabelData(gridimg_in,sub_slices,section):
         rot_i = 1
         rot_j = 0
         num_rot = 1
-    
+
     # Load training label data
     labelimg_in_rot = np.rot90(gridimg_in, k=num_rot, axes=(rot_i,rot_j))
     labelimg_in_rot_sub = labelimg_in_rot[sub_slices,:,:]
 
     # Collapse label data to a single dimension
     img_label_reshape = labelimg_in_rot_sub.ravel(order="F")
-    
+
     # Encode labels as categorical variable
     img_label_reshape = labenc.fit_transform(img_label_reshape)
     return(img_label_reshape)
@@ -189,8 +194,9 @@ def LoadCTStack(gridimg_in,sub_slices,section):
         rot_i = 1
         rot_j = 0
         num_rot = 1
-    
+
     # Load training label data
+
     labelimg_in_rot = np.rot90(gridimg_in, k=num_rot, axes=(rot_i,rot_j))
     labelimg_in_rot_sub = labelimg_in_rot[sub_slices,:,:]
 
@@ -223,20 +229,20 @@ def GetStackDims(labelimg_in,section):
 
 
 # Use random forest model to predict entire CT stack on a slice-by-slice basis
-def RFPredictCTStack(rf_transverse,gridimg_in, phaseimg_in, localthick_cellvein_in, section):  
+def RFPredictCTStack(rf_transverse,gridimg_in, phaseimg_in, localthick_cellvein_in, section):
     # Define distance from lower/upper image boundary
     dist_edge = np.ones(gridimg_in.shape)
     dist_edge[:,(0,1,2,3,4,gridimg_in.shape[1]-4,gridimg_in.shape[1]-3,gridimg_in.shape[1]-2,gridimg_in.shape[1]-1),:] = 0
     dist_edge = transform.rescale(dist_edge, 0.25)
     dist_edge_FL = spim.distance_transform_edt(dist_edge)
     dist_edge_FL = np.multiply(transform.rescale(dist_edge_FL,4),4)
-    
+
     # Define numpy array for storing class predictions
     RFPredictCTStack_out = np.empty(gridimg_in.shape, dtype=np.float64)
-    
+
     # Define empty numpy array for feature layers (FL)
     FL = np.empty((gridimg_in.shape[1],gridimg_in.shape[2],num_feature_layers), dtype=np.float64)
-    
+
     for j in range(0,gridimg_in.shape[0]):
         # Populate FL array with feature layers using custom filters, etc.
         FL[:,:,0] = gridimg_in[j,:,:]
@@ -321,11 +327,24 @@ def match_array_dim(stack1,stack2):
 
     return stack1, stack2
 
+#distinct match array dimensions function, to account for label_stack.shape[0]
+def match_array_dim_label(stack1,stack2):
+    if stack1.shape[1]>stack2.shape[1]:
+        stack1 = stack1[:,0:stack2.shape[1],:]
+    else:
+        stack2 = stack2[:,0:stack1.shape[1],:]
+    if stack1.shape[2]>stack2.shape[2]:
+        stack1 = stack1[:,:,0:stack2.shape[2]]
+    else:
+        stack2 = stack2[:,:,0:stack1.shape[2]]
 
+    return stack1, stack2
+'''
 # Threshold grid and phase images and add the IAS together
 def Threshold_GridPhase(grid_img, phase_img, Th_grid, Th_phase):
     tmp = np.zeros(grid_img.shape)
     tmp[grid_img < Th_grid] = 1
     tmp[grid_img >= Th_grid] = 0
     tmp[phase_img < Th_phase] = 1
-    return tmp 
+    return tmp
+'''
