@@ -2,7 +2,7 @@
 {\fonttbl\f0\fswiss\fcharset0 Helvetica;}
 {\colortbl;\red255\green255\blue255;}
 {\*\expandedcolortbl;;}
-\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\margl1440\margr1440\vieww12540\viewh14580\viewkind0
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
 \f0\fs40 \cf0 ML_microCT:\
@@ -12,150 +12,182 @@
 \b TO DO: \
 
 \b0 - print confusion matrices to .txt files\
-- save more image files at desirable points?\
-	save less?\
-- build a file IO version of the program that reads instructions from file\
-	ideally would like to be able to read based on variable name/tag instead of order\
-		look at what topopy peoples did and try this\
-		xml file\'85need a parser for this? .xml is clean but very structure dependent\
-	collect and display any errors (and warnings?) at end\
-	implement user selected filters and give user options at start to choose filters\
+- print/output images to image folder for quality control\
+- implement adjustable filter parameters\
 - introduce re-direction and conditional progress?\
-	be thorough only if \'91manual\'92 mode will be used a lot\
 	in File IO mode\
 		just at crucial points to prevent wasted time\
 - add loading bars with tqdm anywhere it would be helpful/appropriate\
+- add error handling so program doesn\'92t abort at \'93Load image stacks\'94 and \'93Read from file mode\'94 steps\
 \
 \
 
 \b Last edited by: M. Jenkins\
-Date: 12.09.17
+Date: 1.10.18
 \b0 \
 \
 
-\b\fs28 INSTRUCTIONS
-\b0\fs24 \
+\b\fs28 INSTRUCTIONS\
 \
 
-\b Compile and execute program\
+\fs24 Check out ML_microCT folder\
+	\
 	
+\b0 Contents of folder should be exactly:\
+		\'91data_settings\'92 folder\
+		\'91images\'92 folder\
+		\'91src\'92 folder\
+		\'91results\'92 folder\
+		\'91ML_microCT_instr.rtf\'92 file
+\b\fs28 \
+\
+
+\fs24 Prepare your images and (optional) .txt file instructions\
+	\
+	1) 
+\b0 Populate image folder with:\
+		grid reconstructed (using FIJI) tiff image stack \
+		phase reconstructed (using FIJI) tiff image stack\
+		labeled images (using FIJI) tiff image stack\
+		**note functions within program will add/overwrite other image stacks saved to this folder\
+	
+\b 2) 
+\b0 In \'91data_settings\'92 folder open \'91input_key.txt\'92 file\
+		\'91input_key.txt\'92 is a reference key for the architecture or your .txt file of instructions\
+		**note a .txt file is required to execute program in \'91Read from File Mode\'92\
+		
+\b 2a) 
+\b0 Open a new \'91.txt\'92 file and enter your instructions, line by line, using key as reference\
+		
+\b 2b) 
+\b0 Save your file a \'92.txt\'92 file in \'91data_settings\'92 folder
+\b \
+
+\b0 \
+
+\b Compile and execute program\
+
 \b0 \
 	
 \b 1) 
-\b0 open terminal and change present working drive to src folder location\
+\b0 open terminal and change present working drive to \'91src\'92 folder location\
 	
 \b 2) 
-\b0 enter the following command:\
+\b0 enter the following command to compile and run program:\
 \
-		python main.py\
+		python MLmicroCT.py\
 \
 	
 \b 3)
 \b0  Program 
 \b main menu
 \b0  will be displayed\
-		
-\b order 
-\b0 is vital as there are currently no re-routing methods implemented\
-		
-\b 3a) 
-\b0 first choose 
-\b 1
-\b0  to navigate to
-\b  image loading and preprocessing menu\
-		3b) 
-\b0 now choose 
-\b 1 
-\b0 to first load image stacks\
-			this is hardcoded for now in main.py (lines30-38)\
-				edit for your data\
-				you will also need to populate the images folder in ML_microCT/\
-					use float32 grid and phase reconstruction .tif stacks\
-					use labeled .tif stacks\
-			enable interactivity at this point would be cool\'85on my list\
-		
-\b 3c) 
-\b0 now choose 
-\b 2 
-\b0 to threshold, inver and downsample. processed stack will save\
-		
-\b 3d) 
-\b0 now choose 
-\b 3 
-\b0 to generate local thickness stack. local thickness stack will save\
-		
-\b 3e) 
-\b0 choose 
-\b 4
-\b0  when local thickness stack has already been generated and saved\
-		
-\b 3f) 
-\b0 now choose 
-\b 5 
-\b0 to go back one step to 
-\b main menu\
-	4) 
-\b0 Program 
-\b main menu 
-\b0 will be displayed\
-		
-\b order 
-\b0 is vital as there are currently no re-routing methods implemented\
-		
-\b 4a) 
-\b0 choose 
-\b 2 
-\b0 to navigate to 
-\b train model menu\
-		4b) 
-\b0 now choose 
-\b 1 
-\b0 to define image subset for training and testing\
-			this is hardcoded for now in main.py (lines67-74)\
-				edit for your data\
-			enable interactivity here too\
-		
-\b 4c) 
-\b0 now choose 
-\b 2 
-\b0 to display images and stack dimensions for quality control\
-			display images function in ImgLoadProcess.py file is faulty, fix\
-		
-\b 4d) 
-\b0 now choose 
-\b 3 
-\b0 to train model, this step takes a few minutes\
-		
-\b 4e) 
-\b0 now choose 
-\b 4 
-\b0 to go back one step to 
-\b main menu\
-	5) 
-\b0 Program 
-\b main menu 
-\b0 will be displayed\
-		
-\b 5a) 
-\b0 choose 
-\b 3 
-\b0 to display Out Of Box prediction accuracy \
-		
-\b 5b) 
-\b0 optionally, enter 1 to view feature layer importance\
 	
+\b 4) 
+\b0 Choose:\
+		\'91Manual Mode\'92 for an interactive mode that asks for user-input throughout\
+	
+\b 	
+\b0 \'91Read from File Mode\'92 to execute program using preset instructions on a .txt file\
+		\'91Quit\'92 to quit program\
+	\'91
+\b Manual Mode\'92 Instructions:\
+		5) 
+\b0 Choose 1 for \'91Image loading and pre-processing\'92 menu\
+			**note options 2-3 must be run once per dataset\
+			
+\b 5a) 
+\b0 Choose 1 for \'91Load image stacks\'92\
+				enter requested information
+\b \
+			5b) 
+\b0 Optional: Choose 2 for \'91Generate binary\'85\'92\
+				enter requested information, determined subjectively in FIJI\
+			
+\b 5c) 
+\b0 Optional: Choose 3 for \'91Run local thickness\'85\'92\
+			
+\b 5d) 
+\b0 Choose 4 for \'91Load processed\'85\'92\
+			
+\b 5e) 
+\b0 Choose 5 to \'91Go back\'92 one step \
+		
 \b 6) 
-\b0 Program 
-\b main menu 
-\b0 will be displayed\
-		
+\b0 Choose 2 for \'91Train model\'92 menu\
+			**note options 2, 4, and 5 must be run at least once per dataset\
+			
 \b 6a) 
-\b0 choose 
-\b 4 
-\b0 to\'85\
+\b0 Choose 1 for \'91Define image\'85\'92\
+				enter requested information
+\b \
+			6b) 
+\b0 Optional: Choose 2 for \'91Display some images\'85\'92
+\b \
+			6c) 
+\b0 Choose 3 for \'91Train model\'92\
+				this step will take a few minutes
+\b \
+			6d) 
+\b0 Optional: Choose 4 to \'91Save trained model\'85\'92
+\b \
+			6e) 
+\b0 Optional: Choose 5 to \'91Load trained model\'85\'92
+\b \
+			6f) 
+\b0 Choose option 6 to \'91Go back\'92 one step
+\b \
+		7) 
+\b0 Choose 3 for \'91Examine prediction metrics on training dataset\'92, this step may be repeated\
+			OOB prediction accuracy is printed\
+			
+\b 7a) 
+\b0 Choose yes or no to see or not see feature layer importance
+\b \
+		8) 
+\b0 Choose 4 for \'91Predict single slices from test dataset\'92 and following menu\
+			**note options 2, 3 should be run at least once per dataset for quality control\
+			
+\b 8a) 
+\b0 Choose 1 to \'91Predict single slices\'85\'92
+\b \
+			8b) 
+\b0 Optional: Choose 2 to \'91Generate confusion matrices\'92
+\b \
+			8c) 
+\b0 Optional: Choose 3 to \'91Plot images\'92\
+			
+\b 8d) 
+\b0 Choose 4 to \'91Go back\'92 one step\
 		
-\b \'85Will progress from here\'85
+\b 9) 
+\b0 Choose 5 for \'91Predict all slices in 3d microCT stack\'92 and following menu\
+			
+\b 9a) 
+\b0 Choose 1 to \'91Predict full stack\'92\
+				this step takes a few minutes\
+			
+\b 9b) 
+\b0 Choose 2 to \'91Write stack as .tif file\'92\
+			
+\b 9c) 
+\b0 Choose 3 to \'91Go back\'92 one step\
+		
+\b 10) 
+\b0 Choose 6 for \'91Calculate performance metrics\'92 and following menu\
+			**note this step is incomplete and will do nothing\
+		
+\b 11) 
+\b0 Choose 7 for \'91Go back\'92 to go back one step
+\b \
+	Read from File Mode\'92 Instructions: 
 \b0 \
 		
+\b 5) 
+\b0 Enter exact filename of your .txt file with instructions, file should be in \'91data_settings\'92 folder\
+		
+\b 	
+\b0 program will execute all steps\
+			add output of all relevant results to a results folder
 \b \
 		}
