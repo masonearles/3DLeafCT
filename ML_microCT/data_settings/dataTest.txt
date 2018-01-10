@@ -1,0 +1,12 @@
+../images/
+gridrec.tif
+phaserec.tif
+label_stack.tif
+-12.08
+0.31
+45
+245
+1
+0
+0
+0
