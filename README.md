@@ -7,6 +7,6 @@ X-ray microcomputed tomography (microCT) is rapidly becoming a popular technique
 
 Also, see the [3D Leaf Atlas](http://3dleafatlas.org). <br>
 
-### Segmented images can be used for calculating novel geometric traits
+### Segmented images can be used for calculating novel leaf geometric traits that drive photosynthesis and transpiration
 
 <br> ![Alt text](imgs_readme/3DRendering_Tortuosity.jpg?raw=true "3D Rendering Tortuosity") <br>
