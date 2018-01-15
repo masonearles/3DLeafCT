@@ -9,4 +9,4 @@ X-ray microcomputed tomography (microCT) is rapidly becoming a popular technique
 
 <br> ![Alt text](imgs_readme/3DRendering_Tortuosity.jpg?raw=true "3D Rendering Tortuosity") <br>
 
-Also, see the [3D Leaf Atlas](http://3dleafatlas.org). <br
+Also, see the [3D Leaf Atlas](http://3dleafatlas.org). <br>
