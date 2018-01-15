@@ -1,4 +1,4 @@
-# 3DLeafCTSegmentation
+# 3DLeafCT
 ### Random forest segmentation for 3D leaf microCT images
 
 <br> ![Alt text](imgs_readme/Nymphaea_Peelback_Panel.jpg?raw=true "Nymphaea Peelback Panel") <br>
