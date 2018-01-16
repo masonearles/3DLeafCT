@@ -7,12 +7,12 @@ In the image below, the upper left block is a microCT section through a leaf (~2
 
 <br><a href="url"><img src="https://github.com/masonearles/3DLeafCT/blob/master/imgs_readme/Nymphaea_Peelback_Panel.jpg" width = 600></a></br>
 
-#### We use these segmented images to calculate novel leaf geometric traits that drive photosynthesis and transpiration, such as CO<sub>2</sub> and H<sub>2</sub>O diffusion path length,
+### We use these segmented images to calculate novel leaf geometric traits that drive photosynthesis and transpiration, such as CO<sub>2</sub> and H<sub>2</sub>O diffusion path length,
 
 <br><a href="url"><img src="https://github.com/masonearles/3DLeafCT/blob/master/imgs_readme/3DRendering_Tortuosity.jpg" width = 600></a></br>
 
-#### And for parameterizing abstracted 3D models of CO<sub>2</sub> diffusion and photosynthetic reaction.<br>
+### And for parameterizing abstracted 3D models of CO<sub>2</sub> diffusion and photosynthetic reaction.<br>
 
 <br><a href="url"><img src="https://github.com/masonearles/3DLeafCT/blob/master/imgs_readme/CO2_Diffusion_Reaction.png" width = 600></a></br>
 
-#### Plus, they provide great tools for educational and public outreach: http://3dleafatlas.org
+### Plus, they provide great tools for educational and public outreach: http://3dleafatlas.org
