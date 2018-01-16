@@ -3,7 +3,7 @@
 
 X-ray microcomputed tomography (microCT) is rapidly becoming a popular technique for measuring the 3D geometry of plant organs, such as roots, stems, leaves, flowers, and fruits. Due to the large size of these datasets (> 20 Gb per 3D image), along with the often irregular and complex geometries of many plant organs, image segmentation represents a substantial bottleneck in the scientific pipeline. Here, we are developing a Python module that utilizes machine learning to dramatically improve the efficiency of microCT image segmentation with minimal user input.
 
-In the image below, the upper left block is a microCT section through a leaf (~200 micrometers thick). The dark regions are plant tissue and the light regions are intercellular airspace. The challenge is to segment the leaf into background, tissue, airspace, and veins. The particularly time-consuming aspect is to segment out the vein network, which can take hours to a day by hand in large images with highly reticulated veins. 
+In the upper left block is a microCT section through a leaf that is ~200 micrometers thick. The dark regions are plant tissue and the light regions are intercellular airspace. At this point we've collected nearly 500 images similar to this one. The challenge is to segment the leaf into background, tissue, airspace, and veins. The particularly time-consuming aspect is to segment out the vein network, which can take hours to a day by hand in large images with highly reticulated veins. 
 
 Ultimately, we use these segmented images to generate 3D volumes for geometric measurement and model simulation as shown below.
 
