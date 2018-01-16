@@ -9,11 +9,11 @@ Ultimately, we use these segmented images to generate 3D volumes for geometric m
 
 <br><a href="url"><img src="https://github.com/masonearles/3DLeafCT/blob/master/imgs_readme/Nymphaea_Peelback_Panel.jpg" width = 600></a></br>
 
-For example, I have made novel measurements of leaf geometric traits that underlie photosynthesis and transpiration, such as CO<sub>2</sub> and H<sub>2</sub>O diffusion path length, tortuosity, and intercellular airspace connectivity.
+For example, we have made novel measurements of leaf geometric traits that underlie photosynthesis and transpiration, such as CO<sub>2</sub> and H<sub>2</sub>O diffusion path length, tortuosity, and intercellular airspace connectivity.
 
 <br><a href="url"><img src="https://github.com/masonearles/3DLeafCT/blob/master/imgs_readme/3DRendering_Tortuosity.jpg" width = 600></a></br>
 
-Moreover, I have used these 3D geometric traits to parameterize 3D finite element models of CO<sub>2</sub> diffusion and photosynthetic reaction.<br>
+Moreover, we have used these 3D geometric traits to parameterize 3D finite element models of CO<sub>2</sub> diffusion and photosynthetic reaction.<br>
 
 <br><a href="url"><img src="https://github.com/masonearles/3DLeafCT/blob/master/imgs_readme/CO2_Diffusion_Reaction.png" width = 650></a></br>
 
