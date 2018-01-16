@@ -19,4 +19,5 @@ Moreover, we have used these 3D geometric traits to parameterize 3D finite eleme
 
 Building on this project, we are using these 3D leaf models as tools for educational and public outreach: http://3dleafatlas.org
 
-### Relevant publication: Earles, J.M., Théroux-Rancourt, G., Gilbert, M.E., McElrone, A.J. and Brodersen, C.R. (in review). Beyond porosity: 3D leaf intercellular airspace traits that impact mesophyll conductance.
+### Relevant publication: 
+Earles, J.M., Théroux-Rancourt, G., Gilbert, M.E., McElrone, A.J. and Brodersen, C.R. (in review). Beyond porosity: 3D leaf intercellular airspace traits that impact mesophyll conductance.
