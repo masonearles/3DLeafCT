@@ -5,7 +5,16 @@ X-ray microcomputed tomography (microCT) is rapidly becoming a popular technique
 
 <br> ![Alt text](imgs_readme/Nymphaea_Peelback_Panel.jpg?raw=true "Nymphaea Peelback Panel") <br>
 
-Segmented images can be used for calculating novel leaf geometric traits that drive photosynthesis and transpiration.
+Segmented images can be used for calculating novel leaf geometric traits that drive photosynthesis and transpiration, such as vapor diffusion path length
 
 <br> ![Alt text](imgs_readme/3DRendering_Tortuosity.jpg?raw=true "3D Rendering Tortuosity") <br>
 
+And tortuosity,
+
+<br> ![Alt text](imgs_readme/Porosity_Panel.jpg?raw=true "Porosity Panel") <br>
+
+And for parameterizing abstracted 3D models of diffusion and photosynthetic reaction,
+
+<br> ![Alt text](imgs_readme/3DRendering_Tortuosity.jpg?raw=true "3D Rendering Tortuosity") <br>
+
+And provide great tools for educational and public outreach: http://3dleafatlas.org
