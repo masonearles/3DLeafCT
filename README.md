@@ -9,7 +9,7 @@ Ultimately, we use these segmented images to generate 3D volumes for geometric m
 
 <br><a href="url"><img src="https://github.com/masonearles/3DLeafCT/blob/master/imgs_readme/Nymphaea_Peelback_Panel.jpg" width = 600></a></br>
 
-### Calculating novel leaf geometric traits that drive photosynthesis and transpiration, such as CO<sub>2</sub> and H<sub>2</sub>O diffusion path length,
+### Calculating novel leaf geometric traits that drive photosynthesis and transpiration, such as CO<sub>2</sub> and H<sub>2</sub>O diffusion path length.
 
 <br><a href="url"><img src="https://github.com/masonearles/3DLeafCT/blob/master/imgs_readme/3DRendering_Tortuosity.jpg" width = 600></a></br>
 
