@@ -15,6 +15,6 @@ And tortuosity,
 
 And for parameterizing abstracted 3D models of diffusion and photosynthetic reaction,
 
-<br> ![Alt text](imgs_readme/3DRendering_Tortuosity.jpg?raw=true "3D Rendering Tortuosity") <br>
+<br> ![Alt text](imgs_readme/CO2_Simulation.gif?raw=true "CO2 Simulation") <br>
 
 And provide great tools for educational and public outreach: http://3dleafatlas.org
