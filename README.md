@@ -13,6 +13,6 @@ In the image below, the upper left block is a microCT section through a leaf (~2
 
 ### And for parameterizing abstracted 3D models of CO<sub>2</sub> diffusion and photosynthetic reaction (color corresponds with CO<sub>2</sub> concentration throughout the leaf).<br>
 
-<br><a href="url"><img src="https://github.com/masonearles/3DLeafCT/blob/master/imgs_readme/CO2_Simulation.gif" width = 600></a></br>
+<br><a href="url"><img src="https://github.com/masonearles/3DLeafCT/blob/master/imgs_readme/CO2_Diffusion_Reaction.png" width = 600></a></br>
 
 ### Plus, they provide great tools for educational and public outreach: http://3dleafatlas.org
