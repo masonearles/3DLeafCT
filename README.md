@@ -7,10 +7,10 @@ X-ray microcomputed tomography (microCT) is rapidly becoming a popular technique
 
 ### We use these segmented images to calculate novel leaf geometric traits that drive photosynthesis and transpiration, such as CO<sub>2</sub> and H<sub>2</sub>O diffusion path length,
 
-<br> ![Alt text](imgs_readme/3DRendering_Tortuosity.jpg?raw=true "3D Rendering Tortuosity") <br>
+<br><a href="url"><img src="https://github.com/masonearles/3DLeafCT/blob/master/imgs_readme/3DRendering_Tortuosity.jpg" width = 600></a></br>
 
 ### And for parameterizing abstracted 3D models of CO<sub>2</sub> diffusion and photosynthetic reaction (color corresponds with CO<sub>2</sub> concentration throughout the leaf).<br>
 
-<br> ![Alt text](imgs_readme/CO2_Simulation.gif?raw=true "CO2 Simulation") <br>
+<br><a href="url"><img src="https://github.com/masonearles/3DLeafCT/blob/master/imgs_readme/CO2_Simulation.gif" width = 600></a></br>
 
 ### Plus, they provide great tools for educational and public outreach: http://3dleafatlas.org
