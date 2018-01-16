@@ -17,4 +17,4 @@ Moreover, we have used these 3D geometric traits to parameterize 3D finite eleme
 
 <br><a href="url"><img src="https://github.com/masonearles/3DLeafCT/blob/master/imgs_readme/CO2_Diffusion_Reaction.png" width = 650></a></br>
 
-3D models of leaves also provide great tools for educational and public outreach: http://3dleafatlas.org
+Building on this project, we are using these 3D leaf models as tools for educational and public outreach: http://3dleafatlas.org
