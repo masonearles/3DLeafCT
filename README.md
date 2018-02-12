@@ -1,8 +1,9 @@
 # RandomForestMicroCT
 ### Random forest segmentation for 3D microCT images
+X-ray microcomputed tomography (microCT) is rapidly becoming a popular technique for measuring the 3D geometry of plant organs, such as roots, stems, leaves, flowers, and fruits. Due to the large size of these datasets (> 20 Gb per 3D image), along with the often irregular and complex geometries of many plant organs, image segmentation represents a substantial bottleneck in the scientific pipeline. Here, we are developing a Python module that utilizes machine learning to dramatically improve the efficiency of microCT image segmentation with minimal user input.
 
-X-ray microcomputed tomography (microCT) is rapidly becoming a popular technique for measuring the 3D geometry of plant organs, such as roots, stems, leaves, flowers, and fruits. Due to the large size of these datasets (> 20 Gb per 3D image), along with the often irregular and complex geometries of many plant organs, image segmentation represents a substantial bottleneck in the scientific pipeline. Here, we are developing a Python module that utilizes machine learning to dramatically improve the efficiency of microCT image segmentation with minimal user input. 
+## Changes on this Branch:
+### Command Line Version:
+Once installed, ML_microCT can be run from the command line. This version includes both a 'manual' mode with user input at multiple points through image segmentation process as well as a file I/O method that runs the entire segmentation process without interruption.
+#### See 'ML_microCT_inst.rtf' for detailed instructions.
 
-## Examples
-
-## Installation
