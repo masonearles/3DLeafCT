@@ -550,20 +550,6 @@ def openAndReadFile(filename):
     image_process_bool = str(myFile.readline().rstrip('\n'))
     train_model_bool = str(myFile.readline().rstrip('\n'))
     full_stack_bool = str(myFile.readline().rstrip('\n'))
-    # print(filepath)
-    # print(grid_name)
-    # print(phase_name)
-    # print(label_name)
-    # print(Th_grid)
-    # print(Th_phase)
-    # print(gridphase_train_slices_subset)
-    # print(gridphase_train_slices_subset[1])
-    # print(gridphase_test_slices_subset)
-    # print(label_train_slices_subset)
-    # print(label_test_slices_subset)
-    # print(image_process_bool)
-    # print(train_model_bool)
-    # print(full_stack_bool)
     #closes the file
     print("File read successfully")
     myFile.close()
@@ -801,69 +787,89 @@ def main():
                 else:
                     print("Not a valid choice.")
         elif selection_=="2":
-            # FIX: step needs batch run capability
-            # idea: add promt for number of batches(==counter), then prompt for each batche's instruction text file, at end counter--; have all in while loop (while counter>0...)
-            print("Will read values from your text file, then export results to 'results' folder.")
-            #print("For viewing images, confusion matrices, predicted images and other information see results folder.\n")
-            print("***FIRST YOU MUST:***")
-            # add error handling here
-            filename = raw_input("Enter filename of your text file: (for example, enter exactly: filename.txt)\n")
-            #read input file and define variables
-            filepath,grid_name,phase_name,label_name,Th_grid,Th_phase,gridphase_train_slices_subset,gridphase_test_slices_subset,label_train_slices_subset,label_test_slices_subset,image_process_bool,train_model_bool,full_stack_bool = openAndReadFile("../data_settings/"+filename)
-            #load images
-            gridrec_stack, phaserec_stack, label_stack = Load_images(filepath,grid_name,phase_name,label_name)
-            if image_process_bool=="1":
-                print("IMAGE PROCESSING")
-                #generate binary threshold image, invert, downsample and save
-                Threshold_GridPhase_invert_down(gridrec_stack,phaserec_stack,Th_grid,Th_phase)
-                #run local thickness, upsample, save
-                localthick_up_save()
-            else:
-                print("SKIPPED IMAGE PROCESSING")
-                #load processed local thickness stack and match array dimensions
-            print("***LOADING LOCAL THICKNESS STACK***")
-            localthick_stack = io.imread('../images/local_thick_upscale.tif')
-            # Match array dimensions to correct for resolution loss due to downsampling when generating local thickness
-            gridrec_stack, localthick_stack = match_array_dim(gridrec_stack,localthick_stack)
-            phaserec_stack, localthick_stack = match_array_dim(phaserec_stack,localthick_stack)
-            label_stack, localthick_stack = match_array_dim_label(label_stack,localthick_stack)
-            #this is just for peoples' feelings, these are defined way earlier...in the .txt file
-            print("***DEFINING IMAGE SUBSETS***")
-            if train_model_bool=="1":
-                #train model and return lots of stuff we need
-                rf_transverse,FL_train,FL_test,Label_train,Label_test = train_model(gridrec_stack,phaserec_stack,label_stack,localthick_stack,gridphase_train_slices_subset,gridphase_test_slices_subset,label_train_slices_subset,label_test_slices_subset)
-                #save trained model and other arrays from step 3 to disk
-                save_trainmodel(rf_transverse,FL_train,FL_test,Label_train,Label_test)
-            else:
-                print("SKIPPED TRAINING MODEL")
-                #load trained model and other arrays we need
-                rf_transverse,FL_train,FL_test,Label_train,Label_test = load_trainmodel()
-            #predict single slices from test dataset
-            class_prediction, class_prediction_prob = predict_testset(rf_transverse,FL_test)
-            # Print out of bag precition accuracy and feature layer importance to results folder
-            print_feature_layers(rf_transverse)
-            print("Confusion Matrix")
-            make_conf_matrix(Label_test,class_prediction)
-            print("___________________________________________")
-            print("Normalized Confusion Matrix")
-            make_normconf_matrix(Label_test,class_prediction)
-            #plot images
-            print("This step needs updating!")
-            #reshape arrays
-            prediction_prob_imgs,prediction_imgs,observed_imgs,FL_imgs = reshape_arrays(class_prediction_prob,class_prediction,Label_test,FL_test,label_stack)
-            #print images to file
-            check_images(prediction_prob_imgs,prediction_imgs,observed_imgs,FL_imgs,phaserec_stack)
-            if full_stack_bool=="1":
-                #predict full stack
-                print("***PREDICTING FULL STACK***")
-                RFPredictCTStack_out = RFPredictCTStack(rf_transverse,gridrec_stack, phaserec_stack, localthick_stack,"transverse")
-                #save predicted full stack
-                print("***SAVING PREDICTED STACK***\nSee 'results' folder")
-                # hardcoded division number_of_classes right now, FIX
-                io.imsave("../results/fullstack_pred.tif", img_as_int(RFPredictCTStack_out/6))
-                # performance_metrics(RFPredictCTStack_out,gridphase_test_slices_subset,label_stack,label_test_slices_subset)
-            else:
-                print("SKIPPED FULL STACK PREDICTION AND PERFORMANCE METRICS")
+            global batch_count, filenames
+            batch_count = int(input('Enter number of batches you would like to run\n'))
+            i = 0
+            j = 0
+            filenames = []
+            while i < batch_count:
+                name = str(raw_input('Enter filenames one at a time, you will be prompted again if necessary.\n'))
+                filenames.append(name)
+                i = i+1
+            while j < len(filenames):
+                print('Working on batch number: '+j)
+                # FIX: add error handling here
+                #read input file and define variables
+                filepath,grid_name,phase_name,label_name,Th_grid,Th_phase,gridphase_train_slices_subset,gridphase_test_slices_subset,label_train_slices_subset,label_test_slices_subset,image_process_bool,train_model_bool,full_stack_bool = openAndReadFile("../data_settings/"+filenames[j])
+                #load images
+                gridrec_stack, phaserec_stack, label_stack = Load_images(filepath,grid_name,phase_name,label_name)
+                if image_process_bool=="1":
+                    print("IMAGE PROCESSING")
+                    #generate binary threshold image, invert, downsample and save
+                    Threshold_GridPhase_invert_down(gridrec_stack,phaserec_stack,Th_grid,Th_phase)
+                    #run local thickness, upsample, save
+                    localthick_up_save()
+                else:
+                    print("SKIPPED IMAGE PROCESSING")
+                    #load processed local thickness stack and match array dimensions
+                print("***LOADING LOCAL THICKNESS STACK***")
+                localthick_stack = io.imread('../images/local_thick_upscale.tif')
+                # Match array dimensions to correct for resolution loss due to downsampling when generating local thickness
+                gridrec_stack, localthick_stack = match_array_dim(gridrec_stack,localthick_stack)
+                phaserec_stack, localthick_stack = match_array_dim(phaserec_stack,localthick_stack)
+                label_stack, localthick_stack = match_array_dim_label(label_stack,localthick_stack)
+                #this is just for peoples' feelings, these are defined way earlier...in the .txt file
+                print("***DEFINING IMAGE SUBSETS***")
+                if train_model_bool=="1":
+                    #train model and return lots of stuff we need
+                    rf_transverse,FL_train,FL_test,Label_train,Label_test = train_model(gridrec_stack,phaserec_stack,label_stack,localthick_stack,gridphase_train_slices_subset,gridphase_test_slices_subset,label_train_slices_subset,label_test_slices_subset)
+                    #save trained model and other arrays from step 3 to disk
+                    save_trainmodel(rf_transverse,FL_train,FL_test,Label_train,Label_test)
+                else:
+                    print("SKIPPED TRAINING MODEL")
+                    #load trained model and other arrays we need
+                    rf_transverse,FL_train,FL_test,Label_train,Label_test = load_trainmodel()
+                #predict single slices from test dataset
+                class_prediction, class_prediction_prob = predict_testset(rf_transverse,FL_test)
+                # Print out of bag precition accuracy and feature layer importance to results folder
+                print_feature_layers(rf_transverse)
+                print("Confusion Matrix")
+                make_conf_matrix(Label_test,class_prediction)
+                print("___________________________________________")
+                print("Normalized Confusion Matrix")
+                make_normconf_matrix(Label_test,class_prediction)
+                #plot images
+                print("This step needs updating!")
+                #reshape arrays
+                prediction_prob_imgs,prediction_imgs,observed_imgs,FL_imgs = reshape_arrays(class_prediction_prob,class_prediction,Label_test,FL_test,label_stack)
+                #print images to file
+                check_images(prediction_prob_imgs,prediction_imgs,observed_imgs,FL_imgs,phaserec_stack)
+                if full_stack_bool=="1":
+                    #predict full stack
+                    print("***PREDICTING FULL STACK***")
+                    RFPredictCTStack_out = RFPredictCTStack(rf_transverse,gridrec_stack, phaserec_stack, localthick_stack,"transverse")
+                    #save predicted full stack
+                    print("***SAVING PREDICTED STACK***\nSee 'results' folder")
+                    # hardcoded division number_of_classes right now, FIX
+                    hold = len(np.unique(RFPredictCTStack_out[1]))
+                    io.imsave('../results/fullstack_pred'+batch_count+'.tif', img_as_ubyte(RFPredictCTStack_out/hold))
+                    # performance_metrics(RFPredictCTStack_out,gridphase_test_slices_subset,label_stack,label_test_slices_subset)
+                else:
+                    print("SKIPPED FULL STACK PREDICTION AND PERFORMANCE METRICS")
+                # print(filepath)
+                # print(grid_name)
+                # print(phase_name)
+                # print(label_name)
+                # print(Th_grid)
+                # print(Th_phase)
+                # print(gridphase_train_slices_subset)
+                # print(gridphase_test_slices_subset)
+                # print(label_train_slices_subset)
+                # print(label_test_slices_subset)
+                # print(image_process_bool)
+                # print(train_model_bool)
+                # print(full_stack_bool)
+                j = j + 1
         elif selection_=="3":
             print("Session Ended")
         else:

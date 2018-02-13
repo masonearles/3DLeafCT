@@ -8,8 +8,9 @@ Define grid-phase training slices subset, integers separated by commas only | 45
 Define grid-phase testing slices subset, integers separated by commas only | 200,245
 Define label training slices subset, integers separated by commas only | 1
 Define label testing slices subset, integers separated by commas only | 2,3
-Run image processing and local thickness** | 1
-Train model** | 1
+Run image processing and local thickness boolean** | 1
+Train model boolean** | 1
+Full stack prediction and performance metrics boolean** | 1
 
 
 *Must run at least once per dataset. Can skip to speed up program if running same dataset again

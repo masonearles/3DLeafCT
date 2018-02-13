@@ -4,6 +4,9 @@ X-ray microcomputed tomography (microCT) is rapidly becoming a popular technique
 
 ## Changes on this Branch:
 ### Command Line Version:
-Once installed, ML_microCT can be run from the command line. This version includes both a 'manual' mode with user input at multiple points through image segmentation process as well as a file I/O method that runs the entire segmentation process without interruption.
-#### See 'ML_microCT_inst.rtf' for detailed instructions.
+Once installed, ML_microCT can be run from the command line. This version includes both a 'manual' mode with user input at multiple points throughout image segmentation process as well as a file I/O method that runs the entire segmentation process without interruption.
+
+Introduced 'batch run' capability for file I/O method that allows one to segment multiple stacks, using multiple instruction files, without any interruption. Note, batch run will always be slightly risky as the program may abort at any point, so this is not necessarily a recommended method. Improvements forthcoming.
+
+#### See 'ML_microCT_inst.rtf' for detailed instructions on running from command line
 

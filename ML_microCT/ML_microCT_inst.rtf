@@ -2,16 +2,19 @@
 {\fonttbl\f0\fswiss\fcharset0 Helvetica;}
 {\colortbl;\red255\green255\blue255;}
 {\*\expandedcolortbl;;}
-\margl1440\margr1440\vieww12540\viewh14580\viewkind0
+\margl1440\margr1440\vieww16040\viewh14580\viewkind0
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
 \f0\fs40 \cf0 ML_microCT:\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\fs24 \
+\fs24 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\b TO DO: \
+\b \cf0 TO DO: \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\b0 - print confusion matrices to .txt files\
+\b0 \cf0 - print confusion matrices to .txt files\
 - print/output images to image folder for quality control\
 - implement adjustable filter parameters\
 - introduce re-direction and conditional progress?\
@@ -21,8 +24,9 @@
 - add error handling so program doesn\'92t abort at \'93Load image stacks\'94 and \'93Read from file mode\'94 steps\
 \
 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\b Last edited by: M. Jenkins\
+\b \cf0 Last edited by: M. Jenkins\
 Date: 1.18.18
 \b0 \
 \
@@ -62,12 +66,15 @@ Date: 1.18.18
 \b 2b) 
 \b0 Save your file a \'92.txt\'92 file in \'91data_settings\'92 folder
 \b \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\b0 \
+\b0 \cf0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\b Compile and execute program\
+\b \cf0 Compile and execute program\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\b0 \
+\b0 \cf0 \
 	
 \b 1) 
 \b0 open terminal and change present working drive to \'91src\'92 folder location\
@@ -180,14 +187,16 @@ Date: 1.18.18
 \b 11) 
 \b0 Choose 7 for \'91Go back\'92 to go back one step
 \b \
-	Read from File Mode\'92 Instructions: 
-\b0 \
+	Read from File Mode\'92 Instructions: \
+		5) 
+\b0 Enter number of batches you\'92d like to run; usually 1 unless you want to process two scans without interruption\
 		
-\b 5) 
+\b 6) 
 \b0 Enter exact filename of your .txt file with instructions, file should be in \'91data_settings\'92 folder\
+			this step will be repeated until filename for all batches is defined\
 		
 \b 	
-\b0 program will execute all steps\
-			add output of all relevant results to a results folder
+\b0 program will execute all steps for each batch, saving everything with tag in form \'91B#___\'92 where ___==rest of file name\
+			See \'91results\'92 folder for all relevant results 
 \b \
 		}
