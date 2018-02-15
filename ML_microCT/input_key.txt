@@ -1,0 +1,18 @@
+Filepath to images relative to 'src'folder | ../images/
+Grid reconstruction .tif image stack filename | gridrec.tif
+Phase reconstruction .tif image stack filename | phaserec.tif
+Labeled .tif image stack filename | label_stack.tif
+Grid recon upper threshold value, subjectively determined in FIJI | -12.08
+Phase recon upper threshold value, subjectively determines in FIJI | 0.31
+Define grid-phase training slices subset, integers separated by commas only | 45,60,95
+Define grid-phase testing slices subset, integers separated by commas only | 200,245
+Define label training slices subset, integers separated by commas only | 1
+Define label testing slices subset, integers separated by commas only | 2,3
+Run image processing and local thickness boolean** | 1
+Train model boolean** | 1
+Full stack prediction and performance metrics boolean** | 1
+Folder name for results folder corresponding to this dataset | test1
+
+
+*Must run at least once per dataset. Can skip to speed up program if running same dataset again
+*Use 1 for TRUE and 0 for FALSE; i.e. 1 to run and 0 to skip (if already run)
