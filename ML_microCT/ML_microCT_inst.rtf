@@ -9,12 +9,10 @@
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
 \fs24 \cf0 \
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\b \cf0 TO DO: \
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\b TO DO: \
 
-\b0 \cf0 - print confusion matrices to .txt files\
+\b0 - print confusion matrices to .txt files\
 - print/output images to image folder for quality control\
 - implement adjustable filter parameters\
 - introduce re-direction and conditional progress?\
@@ -24,25 +22,26 @@
 - add error handling so program doesn\'92t abort at \'93Load image stacks\'94 and \'93Read from file mode\'94 steps\
 \
 \
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\b \cf0 Last edited by: M. Jenkins\
-Date: 1.18.18
+\b Last edited by: M. Jenkins\
+Date: 2.14.18
 \b0 \
 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\b\fs28 INSTRUCTIONS\
+\b\fs28 \cf0 INSTRUCTIONS\
 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\fs24 Check out ML_microCT folder\
+\fs24 \cf0 Check out ML_microCT folder\
 	\
 	
 \b0 Contents of folder should be exactly:\
-		\'91data_settings\'92 folder\
+		\'91settings\'92 folder\
 		\'91images\'92 folder\
 		\'91src\'92 folder\
-		\'91results\'92 folder\
-		\'91ML_microCT_instr.rtf\'92 file
+		\'91results\'92 folder contains all custom labeled results folders\
+		\'91ML_microCT_instr.rtf\'92 file, this file
 \b\fs28 \
 \
 
@@ -66,15 +65,12 @@ Date: 1.18.18
 \b 2b) 
 \b0 Save your file a \'92.txt\'92 file in \'91data_settings\'92 folder
 \b \
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
 
-\b0 \cf0 \
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\b0 \
 
-\b \cf0 Compile and execute program\
-\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\b Compile and execute program\
 
-\b0 \cf0 \
+\b0 \
 	
 \b 1) 
 \b0 open terminal and change present working drive to \'91src\'92 folder location\
@@ -99,8 +95,13 @@ Date: 1.18.18
 		\'91Quit\'92 to quit program\
 	\'91
 \b Manual Mode\'92 Instructions:\
+		*First define name of your results folder. \
+			
+\b0 Folder will be created in \'91ML_microCT/results/\'91 directory\
+			This folder will contain all results and data related to scan
+\b \
 		5) 
-\b0 Choose 1 for \'91Image loading and pre-processing\'92 menu\
+\b0 Choose 2 for \'91Image loading and pre-processing\'92 menu\
 			**note options 2-3 must be run once per dataset\
 			
 \b 5a) 
@@ -188,8 +189,9 @@ Date: 1.18.18
 \b0 Choose 7 for \'91Go back\'92 to go back one step
 \b \
 	Read from File Mode\'92 Instructions: \
+		*Results folder name is given in instructions file.\
 		5) 
-\b0 Enter number of batches you\'92d like to run; usually 1 unless you want to process two scans without interruption\
+\b0 Enter number of batches you\'92d like to run; usually 1 unless you want to process two or more scans without interruption\
 		
 \b 6) 
 \b0 Enter exact filename of your .txt file with instructions, file should be in \'91data_settings\'92 folder\

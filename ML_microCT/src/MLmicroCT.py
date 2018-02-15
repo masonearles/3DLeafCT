@@ -107,32 +107,34 @@ def RFPredictCTStack(rf_transverse,gridimg_in, phaseimg_in, localthick_cellvein_
             order="F")
     return(RFPredictCTStack_out)
 
-def check_images(prediction_prob_imgs,prediction_imgs,observed_imgs,FL_imgs,phaserec_stack):
+def check_images(prediction_prob_imgs,prediction_imgs,observed_imgs,FL_imgs,phaserec_stack,folder_name):
     # Plot images of class probabilities, predicted classes, observed classes, and feature layer of interest
     #FIX: add error handling here to clean up output
     #FIX: 4/5 images are just black rectangles..address this
+    if os.path.exists('../results/'+folder_name+'/qc') == False:
+        os.mkdir('../results/'+folder_name+'/qc')
     for i in range(0,prediction_imgs.shape[0]):
         # img1 = Image.open(prediction_prob_imgs[i,:,:,1], cmap="RdYlBu")
-        location = '../images/qc/'+'predprobIMG'+str(i)+'.tif'
+        location = '../results/'+folder_name+'/qc/predprobIMG'+str(i)+'.tif'
         img1 = img_as_ubyte(prediction_prob_imgs[i,:,:,1])
         io.imsave(location, img1)
 
-        location = '../images/qc/'+'observeIMG'+str(i)+'.tif'
+        location = '../results/'+folder_name+'/qc/observeIMG'+str(i)+'.tif'
         img2 = (img_as_ubyte(observed_imgs[i,:,:].astype(np.uint64)))*85 #multiply by 85 to get values (in range 0-3) into 8-bit (0-255) distribution
         io.imsave(location, img2)
 
-        location = '../images/qc/'+'predIMG'+str(i)+'.tif'
+        location = '../results/'+folder_name+'/qc/predIMG'+str(i)+'.tif'
         img3 = (img_as_ubyte(prediction_imgs[i,:,:].astype(np.uint64)))*85
         io.imsave(location, img3)
 
-        location = '../images/qc/'+'phaserec_stackIMG'+str(i)+'.tif'
+        location = '../results/'+folder_name+'/qc/phaserec_stackIMG'+str(i)+'.tif'
         img4 = (img_as_ubyte(phaserec_stack[260,:,:].astype(np.uint64)))*85
         io.imsave(location, img4)
 
-        location = '../images/qc/'+'feature_layerIMG'+str(i)+'.tif'
+        location = '../results/'+folder_name+'/qc/feature_layerIMG'+str(i)+'.tif'
         img5 = (img_as_ubyte(FL_imgs[0,:,:,26].astype(np.uint64)))*85
         io.imsave(location, img5)
-    print("See 'images/qc' folder for quality control images")
+    print("See 'results/yourfoldername/qc' folder for quality control images")
 
 def reshape_arrays(class_prediction_prob,class_prediction,Label_test,FL_test,label_stack):
     print("***RESHAPING ARRAYS***")
@@ -141,7 +143,7 @@ def reshape_arrays(class_prediction_prob,class_prediction,Label_test,FL_test,lab
         -1,
         label_stack.shape[1],
         label_stack.shape[2],
-        4),
+        class_prediction_prob.shape[1]),
         order="F")
     prediction_imgs = class_prediction.reshape((
         -1,
@@ -161,7 +163,7 @@ def reshape_arrays(class_prediction_prob,class_prediction,Label_test,FL_test,lab
         order="F")
     return prediction_prob_imgs,prediction_imgs,observed_imgs,FL_imgs
 
-def make_conf_matrix(L_test,class_p):
+def make_conf_matrix(L_test,class_p,folder_name):
     # Generate confusion matrix for transverse section
     # FIX: better format the output of confusion matrix to .txt file
     df = pd.crosstab(L_test, class_p, rownames=['Actual'], colnames=['Predicted'])
@@ -169,9 +171,9 @@ def make_conf_matrix(L_test,class_p):
     # convert to np array and then np.savetxt("name", data)
     # npdf = df.values
     # np.savetxt('../results/ConfusionMatrix.txt',npdf,fmt='%.4i',header='Confusion Matrix')
-    df.to_csv('../results/ConfusionMatrix.txt',header='Predicted', index='Actual', sep=' ', mode='w')
+    df.to_csv('../results/'+folder_name+'/ConfusionMatrix.txt',header='Predicted', index='Actual', sep=' ', mode='w')
 
-def make_normconf_matrix(L_test,class_p):
+def make_normconf_matrix(L_test,class_p,folder_name):
     # Generate normalized confusion matrix for transverse section
     # FIX: better format the output of confusion matrix to .txt file
     df = pd.crosstab(L_test, class_p, rownames=['Actual'], colnames=['Predicted'], normalize='index')
@@ -179,7 +181,7 @@ def make_normconf_matrix(L_test,class_p):
     # convert to np array and then np.savetxt("name", data)
     # npdf = df.values
     # np.savetxt('../results/NormalizedConfusionMatrix.txt',npdf,fmt='%.4e',header='Normalized Confusion Matrix')
-    df.to_csv('../results/NormalizedConfusionMatrix.txt',header='Predicted', index='Actual', sep=' ', mode='w')
+    df.to_csv('../results/'+folder_name+'/NormalizedConfusionMatrix.txt',header='Predicted', index='Actual', sep=' ', mode='w')
 
 def predict_testset(rf_t,FL_test):
     # predict single slices from dataset
@@ -190,10 +192,10 @@ def predict_testset(rf_t,FL_test):
 
     return class_prediction, class_prediction_prob
 
-def print_feature_layers(rf_t):
+def print_feature_layers(rf_t,folder_name):
     # Print feature layer importance
     # See RFLeafSeg module for corresponding feature layer types
-    file = open('../results/FeatureLayer.txt','w')
+    file = open('../results/'+folder_name+'/FeatureLayer.txt','w')
     file.write('Our OOB prediction of accuracy for is: {oob}%'.format(oob=rf_t.oob_score_ * 100)+'\n')
     feature_layers = range(0,len(rf_t.feature_importances_))
     for fl, imp in zip(feature_layers, rf_t.feature_importances_):
@@ -258,13 +260,6 @@ def LoadCTStack(gridimg_in,sub_slices,section):
 
 def GenerateFL2(gridimg_in, phaseimg_in, localthick_cellvein_in, sub_slices, section):
     # Generate feature layers based on grid/phase stacks and local thickness stack
-    # Requires five user inputs:
-     # 1) grid recon stack (assumes transverse section)
-     # 2) phase recon stack (assumes transverse section)
-     # 3) local thickness stack (assumes transverse section)
-     # 4) list of sub-slices for training/testing
-     # 5) section of interest (i.e. transverse, paradermal, or longitudinal)
-    # Define image dimensions (img_dim1, img_dim2), number of slices (num_slices), and rotation parameters (rot_i, rot_j, num_rot)
     if(section=="transverse"):
         img_dim1 = gridimg_in.shape[1]
         img_dim2 = gridimg_in.shape[2]
@@ -390,32 +385,32 @@ def LoadLabelData(gridimg_in,sub_slices,section):
     img_label_reshape = labenc.fit_transform(img_label_reshape)
     return(img_label_reshape)
 
-def load_trainmodel():
+def load_trainmodel(folder_name):
     print("***LOADING TRAINED MODEL***")
     #load the model from disk
-    filename = '../data_settings/RF_model.sav'
+    filename = '../results/'+folder_name+'/RF_model.sav'
     rf = pickle.load(open(filename, 'rb'))
     print("***LOADING FEATURE LAYER ARRAYS***")
-    FL_tr = io.imread('../images/FL_train.tif')
-    FL_te = io.imread('../images/FL_test.tif')
+    FL_tr = io.imread('../results/'+folder_name+'/FL_train.tif')
+    FL_te = io.imread('../results/'+folder_name+'/FL_test.tif')
     print("***LOADING LABEL IMAGE VECTORS***")
-    Label_tr = io.imread('../images/Label_train.tif')
-    Label_te = io.imread('../images/Label_test.tif')
+    Label_tr = io.imread('../results/'+folder_name+'/Label_train.tif')
+    Label_te = io.imread('../results/'+folder_name+'/Label_test.tif')
     return rf,FL_tr,FL_te,Label_tr,Label_te
 
-def save_trainmodel(rf_t,FL_train,FL_test,Label_train,Label_test):
+def save_trainmodel(rf_t,FL_train,FL_test,Label_train,Label_test,folder_name):
     #Save model to disk; This can be a pretty large file -- ~2 Gb
     print("***SAVING TRAINED MODEL***")
-    filename = '../data_settings/RF_model.sav'
+    filename = '../results/'+folder_name+'/RF_model.sav'
     pickle.dump(rf_t, open(filename, 'wb'))
     print("***SAVING FEATURE LAYER ARRAYS***")
     #save training and testing feature layer array
-    io.imsave('../images/FL_train.tif',FL_train)
-    io.imsave('../images/FL_test.tif',FL_test)
+    io.imsave('../results/'+folder_name+'/FL_train.tif',FL_train)
+    io.imsave('../results/'+folder_name+'/FL_test.tif',FL_test)
     print("***SAVING LABEL IMAGE VECTORS***")
     #save label image vectors
-    io.imsave('../images/Label_train.tif',Label_train)
-    io.imsave('../images/Label_test.tif',Label_test)
+    io.imsave('../results/'+folder_name+'/Label_train.tif',Label_train)
+    io.imsave('../results/'+folder_name+'/Label_test.tif',Label_test)
 
 def train_model(gr_s,pr_s,ls,lt_s,gp_train,gp_test,label_train,label_test):
     print("***GENERATING FEATURE LAYERS***")
@@ -482,20 +477,20 @@ def local_thickness(im):
         im_new = spim.binary_erosion(input=im, structure=disc(1))*im_new
     return im_new
 
-def localthick_up_save():
+def localthick_up_save(folder_name):
     # run local thickness, upsample and save as a .tif stack in images folder
     print("***GENERATING LOCAL THICKNESS STACK***")
     #load thresholded binary downsampled images for local thickness
-    GridPhase_invert_ds = io.imread('../images/GridPhase_invert_ds.tif')
+    GridPhase_invert_ds = io.imread('../results/'+folder_name+'/GridPhase_invert_ds.tif')
     #run local thickness
     local_thick = local_thickness(GridPhase_invert_ds)
     #upsample local_thickness images
     local_thick_upscale = transform.rescale(local_thick, 4, mode='reflect')
     print("***SAVING LOCAL THICKNESS STACK***")
     #write as a .tif file in our images folder
-    io.imsave('../images/local_thick_upscale.tif', local_thick_upscale)
+    io.imsave('../results/'+folder_name+'/local_thick_upscale.tif', local_thick_upscale)
 
-def Threshold_GridPhase_invert_down(grid_img, phase_img, Th_grid, Th_phase):
+def Threshold_GridPhase_invert_down(grid_img, phase_img, Th_grid, Th_phase,folder_name):
     # Threshold grid and phase images and add the IAS together, invert, downsample and save as .tif stack
     print("***THRESHOLDING IMAGES***")
     tmp = np.zeros(grid_img.shape)
@@ -507,8 +502,8 @@ def Threshold_GridPhase_invert_down(grid_img, phase_img, Th_grid, Th_phase):
     #downsample to 25%
     tmp_invert_ds = transform.rescale(tmp_invert, 0.25)
     print("***SAVING IMAGE STACK***")
-    #write as a .tif file un our images folder
-    io.imsave('../images/GridPhase_invert_ds.tif',tmp_invert_ds)
+    #write as a .tif file in custom results folder
+    io.imsave('../results/'+folder_name+'/GridPhase_invert_ds.tif',tmp_invert_ds)
 
 def openAndReadFile(filename):
     #opens and reads '.txt' file made by user with instructions for program...may execute full process n times
@@ -550,10 +545,11 @@ def openAndReadFile(filename):
     image_process_bool = str(myFile.readline().rstrip('\n'))
     train_model_bool = str(myFile.readline().rstrip('\n'))
     full_stack_bool = str(myFile.readline().rstrip('\n'))
+    folder_name = str(myFile.readline()) #function to read ONE line at a time
     #closes the file
-    print("File read successfully")
+    print("File(s) read successfully")
     myFile.close()
-    return filepath,grid_name,phase_name,label_name,Th_grid,Th_phase,gridphase_train_slices_subset,gridphase_test_slices_subset,label_train_slices_subset,label_test_slices_subset,image_process_bool,train_model_bool,full_stack_bool
+    return filepath,grid_name,phase_name,label_name,Th_grid,Th_phase,gridphase_train_slices_subset,gridphase_test_slices_subset,label_train_slices_subset,label_test_slices_subset,image_process_bool,train_model_bool,full_stack_bool,folder_name
 
 def Load_images(fp,gr_name,pr_name,ls_name):
     #image loading
@@ -570,7 +566,7 @@ def Load_images(fp,gr_name,pr_name,ls_name):
     #label_stack = invert(label_stack)
     return gridrec_stack, phaserec_stack, label_stack
 
-def performance_metrics(RFpred,test_slices,label_stack,label_slices):
+def performance_metrics(RFpred,test_slices,label_stack,label_slices,folder_name):
     # FIX: better format the output of confusion matrix to .txt file
     # generate absolute confusion matrix
     conf_matrix = pd.crosstab(RFpred[test_slices,:,:].ravel(order="F"),label_stack[label_slices,:,].ravel(order="F"),rownames=['Actual'], colnames=['Predicted'])
@@ -588,17 +584,17 @@ def performance_metrics(RFpred,test_slices,label_stack,label_slices):
     print(class_precision)
     print("Recall\n")
     print(class_recall)
-    np.savetxt('../results/total_accuracy.txt',total_accuracy,fmt='%.4e',header='Total Accuracy')
-    np.savetxt('../results/class_precision.txt',class_precision,fmt='%.4e',header='Class Precision')
-    np.savetxt('../results/class_recall.txt',class_recall,fmt='%.4e',header='Class Recall')
+    np.savetxt('../results/'+folder_name+'/total_accuracy.txt',total_accuracy,fmt='%.4e',header='Total Accuracy')
+    np.savetxt('../results/'+folder_name+'/class_precision.txt',class_precision,fmt='%.4e',header='Class Precision')
+    np.savetxt('../results/'+folder_name+'/class_recall.txt',class_recall,fmt='%.4e',header='Class Recall')
     # convert to np array and then np.savetxt("name", data)
     # npdf = df.values
     # np.savetxt('../results/ConfusionMatrix.txt',npdf,fmt='%.4i',header='Confusion Matrix')
 
-def load_fullstack(filename):
+def load_fullstack(filename,folder_name):
     print("***LOADING FULL STACK PREDICTION***")
     #load the model from disk
-    rf = io.imread('../results/'+filename)
+    rf = io.imread('../results/'+folder_name+'/'+filename)
     return rf
 
 def main():
@@ -612,17 +608,23 @@ def main():
         selection_ = str(input("Select an option (type a number, press enter):\n"))
         if selection_=="1":
             selection = "1"
-            while selection != "7":
+            while selection != "8":
                 print("********_____MANUAL MODE MAIN MENU_____********")
-                print("1. Image loading and pre-processing")
-                print("2. Train model")
-                print("3. Examine prediction metrics on training dataset")
-                print("4. Predict single slices from test dataset")
-                print("5. Predict all slices in 3d microCT stack")
-                print("6. Calculate performance metrics")
-                print("7. Go back")
+                print("1. Define folder for results, MUST RUN THIS FIRST")
+                print("2. Image loading and pre-processing")
+                print("3. Train model")
+                print("4. Examine prediction metrics on training dataset")
+                print("5. Predict single slices from test dataset")
+                print("6. Predict all slices in 3d microCT stack")
+                print("7. Calculate performance metrics")
+                print("8. Go back")
                 selection = str(input("Select an option (type a number, press enter):\n"))
-                if selection=="1": #image loading and pre-processing
+                if selection=="1":
+                    folder_name = str(raw_input("Enter unique title for folder containing results from this scan:\n"))
+                    if os.path.exists("../results/" + folder_name) == False:
+                        os.makedirs("../results/" + folder_name)
+                    print("Folder exists or was created successfully.\nSee folder in 'ML_microCT/results/'' directory\n")
+                elif selection=="2": #image loading and pre-processing
                     selection2 = "1"
                     while selection2 != "5":
                         print("********_____IMAGE LOADING AND PRE-PROCESSING MENU_____********")
@@ -634,29 +636,31 @@ def main():
                         selection2 = str(input("Select an option (type a number, press enter):\n"))
                         if selection2=="1": #load image stacks
                             #manual entry
-                            #add error handling here
-                            # filepath = raw_input("Enter filepath to .tif stacks, relative to main.py:\n")
-                            # grid_name = raw_input("Enter filename of grid reconstruction .tif stack:\n")
-                            # phase_name = raw_input("Enter filename of phase reconstruction .tif stack:\n")
-                            # label_name = raw_input("Enter filename of labeled .tif stack:\n")
-                            filepath = "../images/"
-                            grid_name = "gridrec_stack_conc.tif"
-                            phase_name = "phaserec_stack_conc.tif"
-                            label_name = "label_stack_conc.tif"
-                            gridrec_stack, phaserec_stack, label_stack = Load_images(filepath,grid_name,phase_name,label_name)
+                            # filepath = "../images/"
+                            # grid_name = "gridrec_stack_conc.tif"
+                            # phase_name = "phaserec_stack_conc.tif"
+                            # label_name = "label_stack_conc.tif"
+                            filepath = raw_input("Enter filepath to .tif stacks, relative to main.py:\n")
+                            grid_name = raw_input("Enter filename of grid reconstruction .tif stack:\n")
+                            phase_name = raw_input("Enter filename of phase reconstruction .tif stack:\n")
+                            label_name = raw_input("Enter filename of labeled .tif stack:\n")
+                            if os.path.exists(filepath + grid_name) == False or os.path.exists(filepath + phase_name) == False or os.path.exists(filepath + label_name) == False:
+                                    print("Try again, at least some of the information you entered is incorrect")
+                            else:
+                                gridrec_stack, phaserec_stack, label_stack = Load_images(filepath,grid_name,phase_name,label_name)
                         elif selection2=="2": #generate binary threshold image, invert, downsample and save
-                            Th_grid = raw_input("Enter subjective lower threshold value for grid-phase reconstruction images, determined in FIJI.\n")
-                            Th_grid = float(Th_grid)
-                            Th_phase = raw_input("Enter subjective upper threshold value for grid-phase reconstruction images, determined in FIJI.\n")
-                            Th_phase = float(Th_phase)
+                            Th_grid = float(raw_input("Enter subjective lower threshold value for grid-phase reconstruction images, determined in FIJI.\n"))
+                            # Th_grid = float(Th_grid)
+                            Th_phase = float(raw_input("Enter subjective upper threshold value for grid-phase reconstruction images, determined in FIJI.\n"))
+                            # Th_phase = float(Th_phase)
                             # Th_grid = -22.09
                             # Th_phase = 0.6
-                            Threshold_GridPhase_invert_down(gridrec_stack,phaserec_stack,Th_grid,Th_phase)
+                            Threshold_GridPhase_invert_down(gridrec_stack,phaserec_stack,Th_grid,Th_phase,folder_name)
                         elif selection2=="3": #run local thickness, upsample, save
-                            localthick_up_save()
+                            localthick_up_save(folder_name)
                         elif selection2=="4": #load processed local thickness stack and match array dimensions
                             print("***LOADING LOCAL THICKNESS STACK***")
-                            localthick_stack = io.imread('../images/local_thick_upscale.tif')
+                            localthick_stack = io.imread('../results/'+folder_name+'local_thick_upscale.tif')
                             # Match array dimensions to correct for resolution loss due to downsampling when generating local thickness
                             gridrec_stack, localthick_stack = match_array_dim(gridrec_stack,localthick_stack)
                             phaserec_stack, localthick_stack = match_array_dim(phaserec_stack,localthick_stack)
@@ -665,7 +669,7 @@ def main():
                             print("Going back one step...")
                         else:
                             print("Not a valid choice.")
-                elif selection=="2": #train model
+                elif selection=="3": #train model
                     selection3="1"
                     while selection3 != "6":
                         print("********_____TRAIN MODEL MENU_____********")
@@ -687,17 +691,14 @@ def main():
                                 hold = int(raw_input("Enter number for grid-phase TRAINING slice subset, one at a time, in order\n(you will be prompted again for subsequent numbers):\n"))
                                 gridphase_train_slices_subset.append(hold)
                             for i in range(0,count):
-                                hold2 = raw_input("Enter number for grid-phase TESTING slice(s) subset, one at a time, in order\n(you will be prompted again for subsequent numbers):\n")
-                                hold2 = int(hold2)
+                                hold2 = int(raw_input("Enter number for grid-phase TESTING slice(s) subset, one at a time, in order\n(you will be prompted again for subsequent numbers):\n"))
                                 gridphase_test_slices_subset.append(hold2)
                             count = int(input("Enter number of slices in labeled images train/test subset:\n"))
                             for i in range (0,count):
-                                hold3 = raw_input("Enter number for labeled images TRAINING slice(s) subset, one at a time, in order\n(you will be prompted again for subsequent numbers):\n")
-                                hold3 = int(hold3)
+                                hold3 = int(raw_input("Enter number for labeled images TRAINING slice(s) subset, one at a time, in order\n(you will be prompted again for subsequent numbers):\n"))
                                 label_train_slices_subset.append(hold3)
                             for i in range (0,count):
-                                hold4 = raw_input("Enter number for labeled images TESTING slice(s) subset, one at a time, in order\n(you will be prompted again for subsequent numbers):\n")
-                                hold4 = int(hold4)
+                                hold4 = int(raw_input("Enter number for labeled images TESTING slice(s) subset, one at a time, in order\n(you will be prompted again for subsequent numbers):\n"))
                                 label_test_slices_subset.append(hold4)
                             # gridphase_train_slices_subset = [45]
                             # gridphase_test_slices_subset = [245]
@@ -708,14 +709,14 @@ def main():
                         elif selection3=="3": #train model
                             rf_transverse,FL_train,FL_test,Label_train,Label_test = train_model(gridrec_stack,phaserec_stack,label_stack,localthick_stack,gridphase_train_slices_subset,gridphase_test_slices_subset,label_train_slices_subset,label_test_slices_subset)
                         elif selection3=="4": #save trained model and other arrays from step 3 to disk
-                            save_trainmodel(rf_transverse,FL_train,FL_test,Label_train,Label_test)
+                            save_trainmodel(rf_transverse,FL_train,FL_test,Label_train,Label_test,folder_name)
                         elif selection3=="5": #load trained model and other arrays from step 4, to skip 1-4 if already ran
-                            rf_transverse,FL_train,FL_test,Label_train,Label_test = load_trainmodel()
+                            rf_transverse,FL_train,FL_test,Label_train,Label_test = load_trainmodel(folder_name)
                         elif selection3=="6": #go back one step
                             print("Going back one step...")
                         else:
                             print("Not a valid choice.")
-                elif selection=="3": #examine prediction metrics on training dataset
+                elif selection=="4": #examine prediction metrics on training dataset
                     # Print out of bag precition accuracy
                     hold = "1"
                     print('Our Out Of Box prediction of accuracy is: {oob}%'.format(oob=rf_transverse.oob_score_ * 100))
@@ -726,7 +727,7 @@ def main():
                         print("See results folder for feature layer importance")
                     else:
                         print("Okay. Going back.")
-                elif selection=="4": #predict single slices
+                elif selection=="5": #predict single slices
                     #print("You selected option 4")
                     selection4="1"
                     while selection4 != "4":
@@ -740,10 +741,10 @@ def main():
                             class_prediction, class_prediction_prob = predict_testset(rf_transverse,FL_test)
                         elif selection4=="2": #generate confusion matrices
                             print("Confusion Matrix")
-                            make_conf_matrix(Label_test,class_prediction)
+                            make_conf_matrix(Label_test,class_prediction,folder_name)
                             print("___________________________________________")
                             print("Normalized Confusion Matrix")
-                            make_normconf_matrix(Label_test,class_prediction)
+                            make_normconf_matrix(Label_test,class_prediction,folder_name)
                         elif selection4=="3": #plot images
                             print("Quality Control images saved to 'images/qc' folder.")
                             prediction_prob_imgs,prediction_imgs,observed_imgs,FL_imgs = reshape_arrays(class_prediction_prob,class_prediction,Label_test,FL_test,label_stack)
@@ -752,7 +753,7 @@ def main():
                             print("Going back one step...")
                         else:
                             print("Not a valid choice.")
-                elif selection=="5": #predict all slices in 3d stack
+                elif selection=="6": #predict all slices in 3d stack
                     selection5="1"
                     while selection5 != "3":
                         print("********_____FULL STACK PREDICTIONS MENU_____********")
@@ -765,24 +766,23 @@ def main():
                             print("***PREDICTING FULL STACK***")
                             RFPredictCTStack_out = RFPredictCTStack(rf_transverse,gridrec_stack,phaserec_stack,localthick_stack,"transverse")
                         elif selection5=="2": #write stack as a tiff file
-                            print("***SAVING PREDICTED STACK***\nSee 'results' folder")
-                            name = raw_input("Enter filename suffix for fullstack prediction:\n(use letters, numbers or underscores; no spaces)\n")
-                            io.imsave("../results/fullstack_pred"+name+".tif", img_as_int(RFPredictCTStack_out/6))
+                            print("***SAVING PREDICTED STACK***\nSee 'results/yourfoldername' folder")
+                            io.imsave("../results/"+folder_name+"fullstack_pred.tif", img_as_ubyte(RFPredictCTStack_out/len(np.unique(RFPredictCTStack_out[1]))))
                         elif selection5=="3": #load full stack prediction
                             # print("You selected option 3. This steps needs updates!")
                             # FIX: throws error due to unsigned int16 format
                             name2 = raw_input("Enter filename for existing fullstack prediction (located in 'results' folder):\n")
-                            RFPredictCTStack_out = load_fullstack(name2)
+                            RFPredictCTStack_out = load_fullstack(name2,folder_name)
                         elif selection5=="4": #go back one step
                             print("Going back one step...")
                         else:
                             print("Not a valid choice.")
-                elif selection=="6": #performance metrics
-                    print("You selected option 6. This step needs updating!")
+                elif selection=="7": #performance metrics
+                    print("You selected option 7. This step needs updating!")
                     # FIX
                     # performance_metrics(RFPredictCTStack_out,gridphase_test_slices_subset,label_stack,label_test_slices_subset)
                     # print("This step needs updating!")
-                elif selection=="7": #go back one step
+                elif selection=="8": #go back one step
                     print("Going back one step...")
                 else:
                     print("Not a valid choice.")
@@ -797,65 +797,11 @@ def main():
                 filenames.append(name)
                 i = i+1
             while j < len(filenames):
-                print('Working on batch number: '+j)
+                print('Working on batch number: '+str(j+1)+'/'+str(len(filenames)))
                 # FIX: add error handling here
                 #read input file and define variables
-                filepath,grid_name,phase_name,label_name,Th_grid,Th_phase,gridphase_train_slices_subset,gridphase_test_slices_subset,label_train_slices_subset,label_test_slices_subset,image_process_bool,train_model_bool,full_stack_bool = openAndReadFile("../data_settings/"+filenames[j])
-                #load images
-                gridrec_stack, phaserec_stack, label_stack = Load_images(filepath,grid_name,phase_name,label_name)
-                if image_process_bool=="1":
-                    print("IMAGE PROCESSING")
-                    #generate binary threshold image, invert, downsample and save
-                    Threshold_GridPhase_invert_down(gridrec_stack,phaserec_stack,Th_grid,Th_phase)
-                    #run local thickness, upsample, save
-                    localthick_up_save()
-                else:
-                    print("SKIPPED IMAGE PROCESSING")
-                    #load processed local thickness stack and match array dimensions
-                print("***LOADING LOCAL THICKNESS STACK***")
-                localthick_stack = io.imread('../images/local_thick_upscale.tif')
-                # Match array dimensions to correct for resolution loss due to downsampling when generating local thickness
-                gridrec_stack, localthick_stack = match_array_dim(gridrec_stack,localthick_stack)
-                phaserec_stack, localthick_stack = match_array_dim(phaserec_stack,localthick_stack)
-                label_stack, localthick_stack = match_array_dim_label(label_stack,localthick_stack)
-                #this is just for peoples' feelings, these are defined way earlier...in the .txt file
-                print("***DEFINING IMAGE SUBSETS***")
-                if train_model_bool=="1":
-                    #train model and return lots of stuff we need
-                    rf_transverse,FL_train,FL_test,Label_train,Label_test = train_model(gridrec_stack,phaserec_stack,label_stack,localthick_stack,gridphase_train_slices_subset,gridphase_test_slices_subset,label_train_slices_subset,label_test_slices_subset)
-                    #save trained model and other arrays from step 3 to disk
-                    save_trainmodel(rf_transverse,FL_train,FL_test,Label_train,Label_test)
-                else:
-                    print("SKIPPED TRAINING MODEL")
-                    #load trained model and other arrays we need
-                    rf_transverse,FL_train,FL_test,Label_train,Label_test = load_trainmodel()
-                #predict single slices from test dataset
-                class_prediction, class_prediction_prob = predict_testset(rf_transverse,FL_test)
-                # Print out of bag precition accuracy and feature layer importance to results folder
-                print_feature_layers(rf_transverse)
-                print("Confusion Matrix")
-                make_conf_matrix(Label_test,class_prediction)
-                print("___________________________________________")
-                print("Normalized Confusion Matrix")
-                make_normconf_matrix(Label_test,class_prediction)
-                #plot images
-                print("This step needs updating!")
-                #reshape arrays
-                prediction_prob_imgs,prediction_imgs,observed_imgs,FL_imgs = reshape_arrays(class_prediction_prob,class_prediction,Label_test,FL_test,label_stack)
-                #print images to file
-                check_images(prediction_prob_imgs,prediction_imgs,observed_imgs,FL_imgs,phaserec_stack)
-                if full_stack_bool=="1":
-                    #predict full stack
-                    print("***PREDICTING FULL STACK***")
-                    RFPredictCTStack_out = RFPredictCTStack(rf_transverse,gridrec_stack, phaserec_stack, localthick_stack,"transverse")
-                    #save predicted full stack
-                    print("***SAVING PREDICTED STACK***\nSee 'results' folder")
-                    # hardcoded division number_of_classes right now, FIX
-                    hold = len(np.unique(RFPredictCTStack_out[1]))
-                    io.imsave('../results/fullstack_pred'+batch_count+'.tif', img_as_ubyte(RFPredictCTStack_out/hold))
-                    # performance_metrics(RFPredictCTStack_out,gridphase_test_slices_subset,label_stack,label_test_slices_subset)
-                else:
-                    print("SKIPPED FULL STACK PREDICTION AND PERFORMANCE METRICS")
+                filepath,grid_name,phase_name,label_name,Th_grid,Th_phase,gridphase_train_slices_subset,gridphase_test_slices_subset,label_train_slices_subset,label_test_slices_subset,image_process_bool,train_model_bool,full_stack_bool,folder_name = openAndReadFile("../settings/"+filenames[j])
+                #check for and possibly create repo for all results
                 # print(filepath)
                 # print(grid_name)
                 # print(phase_name)
@@ -869,6 +815,64 @@ def main():
                 # print(image_process_bool)
                 # print(train_model_bool)
                 # print(full_stack_bool)
+                # print(folder_name)
+                if os.path.exists("../results/" + folder_name) == False:
+                    os.makedirs("../results/" + folder_name)
+                print("Folder exists or was created successfully.\nSee folder in 'ML_microCT/results/' directory")
+                #load images
+                gridrec_stack, phaserec_stack, label_stack = Load_images(filepath,grid_name,phase_name,label_name)
+                if image_process_bool=="1":
+                    print("IMAGE PROCESSING")
+                    #generate binary threshold image, invert, downsample and save
+                    Threshold_GridPhase_invert_down(gridrec_stack,phaserec_stack,Th_grid,Th_phase,folder_name)
+                    #run local thickness, upsample, save
+                    localthick_up_save(folder_name)
+                else:
+                    print("SKIPPED IMAGE PROCESSING")
+                    #load processed local thickness stack and match array dimensions
+                print("***LOADING LOCAL THICKNESS STACK***")
+                localthick_stack = io.imread('../results/'+folder_name+'/local_thick_upscale.tif')
+                # Match array dimensions to correct for resolution loss due to downsampling when generating local thickness
+                gridrec_stack, localthick_stack = match_array_dim(gridrec_stack,localthick_stack)
+                phaserec_stack, localthick_stack = match_array_dim(phaserec_stack,localthick_stack)
+                label_stack, localthick_stack = match_array_dim_label(label_stack,localthick_stack)
+                #this is just for peoples' feelings, these are defined way earlier...in the .txt file
+                print("***DEFINING IMAGE SUBSETS***")
+                if train_model_bool=="1":
+                    #train model and return lots of stuff we need
+                    rf_transverse,FL_train,FL_test,Label_train,Label_test = train_model(gridrec_stack,phaserec_stack,label_stack,localthick_stack,gridphase_train_slices_subset,gridphase_test_slices_subset,label_train_slices_subset,label_test_slices_subset)
+                    #save trained model and other arrays from step 3 to disk
+                    save_trainmodel(rf_transverse,FL_train,FL_test,Label_train,Label_test,folder_name)
+                else:
+                    print("SKIPPED TRAINING MODEL")
+                    #load trained model and other arrays we need
+                    rf_transverse,FL_train,FL_test,Label_train,Label_test = load_trainmodel(folder_name)
+                #predict single slices from test dataset
+                class_prediction, class_prediction_prob = predict_testset(rf_transverse,FL_test)
+                # Print out of bag precition accuracy and feature layer importance to results folder
+                print_feature_layers(rf_transverse,folder_name)
+                print("Confusion Matrix")
+                make_conf_matrix(Label_test,class_prediction,folder_name)
+                print("___________________________________________")
+                print("Normalized Confusion Matrix")
+                make_normconf_matrix(Label_test,class_prediction,folder_name)
+                #plot images
+                print("This step needs updating!")
+                #reshape arrays
+                prediction_prob_imgs,prediction_imgs,observed_imgs,FL_imgs = reshape_arrays(class_prediction_prob,class_prediction,Label_test,FL_test,label_stack)
+                #print images to file
+                check_images(prediction_prob_imgs,prediction_imgs,observed_imgs,FL_imgs,phaserec_stack,folder_name)
+                if full_stack_bool=="1":
+                    #predict full stack
+                    print("***PREDICTING FULL STACK***")
+                    RFPredictCTStack_out = RFPredictCTStack(rf_transverse,gridrec_stack, phaserec_stack, localthick_stack,"transverse")
+                    #save predicted full stack
+                    print("***SAVING PREDICTED STACK***\nSee 'results' folder")
+                    # hardcoded division number_of_classes right now, FIX
+                    io.imsave('../results/'+folder_name+'/fullstack_prediction.tif', img_as_ubyte(RFPredictCTStack_out/len(np.unique(RFPredictCTStack_out[1]))))
+                    # performance_metrics(RFPredictCTStack_out,gridphase_test_slices_subset,label_stack,label_test_slices_subset)
+                else:
+                    print("SKIPPED FULL STACK PREDICTION AND PERFORMANCE METRICS")
                 j = j + 1
         elif selection_=="3":
             print("Session Ended")

@@ -1,0 +1,14 @@
+../images/
+gridrec_stack_conc_t1.tif
+phaserec_stack_conc_t1.tif
+label_stack_conc_t1.tif
+-22.09
+0.6
+48,96,200,340
+59,110,275,460
+4,5,6,7
+0,1,2,3
+0
+0
+0
+test1
