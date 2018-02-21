@@ -8,7 +8,9 @@ Once installed, ML_microCT can be run from the command line. This version includ
 
 Introduced 'batch run' capability for file I/O method that allows one to segment multiple stacks, using multiple instruction files, without any interruption. Note, batch run will always be slightly risky as the program may abort at any point, so this is not necessarily a recommended method. Improvements forthcoming.
 
-Now, every time a new scan is segmented all results and data related to this scan will be exported to a folder with a user-generated name.
+Now, every time a new scan is segmented all results and data related to this scan will be exported to a new folder with a user-generated name.
 
-#### See 'ML_microCT_inst.rtf' for detailed instructions on running from command line
+#### See 'ML_microCT_inst.rtf' for detailed instructions on running from command lin:
 
+### Post-processing Beta:
+Once you have a full predicted stack, you can generate a 2D mesh in .stil format. Then smooth this 2D surface and visualize segmented classes as separate, complementary volumes in 3D space.
