@@ -10,7 +10,7 @@ Introduced 'batch run' capability for file I/O method that allows one to segment
 
 Now, every time a new scan is segmented all results and data related to this scan will be exported to a new folder with a user-generated name.
 
-#### See 'ML_microCT_inst.rtf' for detailed instructions on running from command lin:
+#### See 'ML_microCT_inst.rtf' for detailed instructions on running from command line:
 
 ### Post-processing Beta:
-Once you have a full predicted stack, you can generate a 2D mesh in .stil format. Then smooth this 2D surface and visualize segmented classes as separate, complementary volumes in 3D space.
+Once you have a full predicted stack, you can generate a 2D mesh in .stl format. Then smooth this 2D surface and visualize segmented classes as separate, complementary volumes in 3D space.
