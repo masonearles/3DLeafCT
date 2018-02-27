@@ -30,7 +30,7 @@ gauss_sd_list = [2,4,8,16,32,64] #six different filters with different sd for ea
 gauss_length = 2*len(gauss_sd_list)
 hess_range = [4,64]
 hess_step = 4
-num_feature_layers = 36 # grid and phase recon; plus gaussian blurs; plus hessian filters
+num_feature_layers = 37 # grid and phase recon; plus gaussian blurs; plus hessian filters
 
 # Import label encoder
 labenc = LabelEncoder()
@@ -258,6 +258,10 @@ def LoadCTStack(gridimg_in,sub_slices,section):
 
     return(labelimg_in_rot_sub)
 
+def minFilter(img):
+    filtered = scipy.ndimage.filters.minimum_filter(img, size = (3,1,1))
+    return filtered
+
 def GenerateFL2(gridimg_in, phaseimg_in, localthick_cellvein_in, sub_slices, section):
     # Generate feature layers based on grid/phase stacks and local thickness stack
     if(section=="transverse"):
@@ -343,6 +347,7 @@ def GenerateFL2(gridimg_in, phaseimg_in, localthick_cellvein_in, sub_slices, sec
         FL[i,:,:,33] = winVar(FL[i,:,:,21],64)
         FL[i,:,:,34] = winVar(FL[i,:,:,20],128)
         FL[i,:,:,35] = winVar(FL[i,:,:,21],128)
+    FL[:,:,:,36] = minFilter(FL[:,:,:,14])
 
 
     # Collapse training data to two dimensions
@@ -563,7 +568,7 @@ def Load_images(fp,gr_name,pr_name,ls_name):
     #label_stack = np.rollaxis(io.imread(filepath + 'label_stack.tif'),2,0)
     label_stack = io.imread(fp + ls_name)
     #Invert my label_stack, uncomment as needed
-    #label_stack = invert(label_stack)
+    label_stack = invert(label_stack)
     return gridrec_stack, phaserec_stack, label_stack
 
 def performance_metrics(RFpred,test_slices,label_stack,label_slices,folder_name):
@@ -623,7 +628,7 @@ def main():
                     folder_name = str(raw_input("Enter unique title for folder containing results from this scan:\n"))
                     if os.path.exists("../results/" + folder_name) == False:
                         os.makedirs("../results/" + folder_name)
-                    print("Folder exists or was created successfully.\nSee folder in 'ML_microCT/results/'' directory\n")
+                    print("Your custom results folder exists or was created successfully.\nSee folder in 'ML_microCT/results/'' directory")
                 elif selection=="2": #image loading and pre-processing
                     selection2 = "1"
                     while selection2 != "5":
@@ -771,7 +776,7 @@ def main():
                         elif selection5=="3": #load full stack prediction
                             # print("You selected option 3. This steps needs updates!")
                             # FIX: throws error due to unsigned int16 format
-                            name2 = raw_input("Enter filename for existing fullstack prediction (located in 'results' folder):\n")
+                            name2 = raw_input("Enter filename for existing fullstack prediction (located in your custom results folder):\n")
                             RFPredictCTStack_out = load_fullstack(name2,folder_name)
                         elif selection5=="4": #go back one step
                             print("Going back one step...")
@@ -818,7 +823,7 @@ def main():
                 # print(folder_name)
                 if os.path.exists("../results/" + folder_name) == False:
                     os.makedirs("../results/" + folder_name)
-                print("Folder exists or was created successfully.\nSee folder in 'ML_microCT/results/' directory")
+                print("Your custom results folder exists or was created successfully.\nSee folder in 'ML_microCT/results/' directory")
                 #load images
                 gridrec_stack, phaserec_stack, label_stack = Load_images(filepath,grid_name,phase_name,label_name)
                 if image_process_bool=="1":
