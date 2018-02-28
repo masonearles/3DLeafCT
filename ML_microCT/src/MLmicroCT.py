@@ -159,7 +159,7 @@ def reshape_arrays(class_prediction_prob,class_prediction,Label_test,FL_test,lab
         -1,
         label_stack.shape[1],
         label_stack.shape[2],
-        36),
+        num_feature_layers),
         order="F")
     return prediction_prob_imgs,prediction_imgs,observed_imgs,FL_imgs
 
@@ -259,7 +259,7 @@ def LoadCTStack(gridimg_in,sub_slices,section):
     return(labelimg_in_rot_sub)
 
 def minFilter(img):
-    filtered = scipy.ndimage.filters.minimum_filter(img, size = (3,1,1))
+    filtered = sp.ndimage.filters.minimum_filter(img, size = (3,1,1))
     return filtered
 
 def GenerateFL2(gridimg_in, phaseimg_in, localthick_cellvein_in, sub_slices, section):
