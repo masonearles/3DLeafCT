@@ -6,7 +6,7 @@ import skimage.io as io
 from skimage import transform, img_as_int, img_as_ubyte, img_as_float
 from skimage.filters import median, sobel, hessian, gabor, gaussian, scharr
 from skimage.segmentation import clear_border
-from skimage.morphology import cube, ball, disk
+from skimage.morphology import cube, ball, disk, remove_small_objects
 from skimage.util import invert
 import scipy as sp
 import scipy.ndimage as spim
@@ -24,6 +24,9 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from scipy import misc
 
+from scipy.ndimage.filters import maximum_filter, median_filter, minimum_filter, percentile_filter
+from scipy.ndimage.morphology import distance_transform_edt
+
 # Filter parameters; Label encoder setup
 disk_size=5
 gauss_sd_list = [2,4,8,16,32,64] #six different filters with different sd for each, big sd = more blurred
@@ -34,6 +37,131 @@ num_feature_layers = 37 # grid and phase recon; plus gaussian blurs; plus hessia
 
 # Import label encoder
 labenc = LabelEncoder()
+
+def smooth_epidermis(img):
+    # FIX: clean this up, perhaps break into multiple functions
+    # Define 3D array of distances from lower and upper epidermises
+    a = range(0,img.shape[1])
+    b = np.tile(a,(img.shape[2],img.shape[0],1))
+    b = np.moveaxis(b,[0,1,2],[2,0,1])
+    # Determine the lower edge of the spongy/palisade mesophyll
+    # FIX: hardcoded values
+    c = (img==146)
+    d = (b*c)
+    m_low = np.argmax(d, axis=1)
+    # Determine the lower edge of the vascular bundle
+    c = (img==146)
+    d = (b*c)
+    v_low = np.argmax(d, axis=1)
+    # Determine the lower edge of the epidermis
+    # FIX: harcoded values
+    c = (img==182)
+    d = (b*c)
+    e_low = np.argmax(d, axis=1)
+    e_low = np.maximum(e_low, m_low) # Checks if mesophyll cells are below lower epidermis
+                                     # Changes lowest mesophyll pixel to epidermal class
+    e_low = np.maximum(e_low, v_low) # Similar to above, but with vascular bundle
+    epi_low = np.zeros(img.shape)
+    for z in range(0,epi_low.shape[0]):
+        for x in range(0,epi_low.shape[2]):
+            epi_low[z,e_low[z,x],x] = 1
+    # Determine the upper edge of the epidermis
+    b2 = np.flip(b,1)
+    d = (b2*c)
+    e_up = np.argmax(d, axis=1)
+    epi_up = np.zeros(img.shape)
+    for z in range(0,epi_up.shape[0]):
+        for x in range(0,epi_up.shape[2]):
+            epi_up[z,e_up[z,x],x] = 1
+    # Generate a binary stack with the pixels inside the epidermis set equal to 1
+    epi_in = np.zeros(img.shape, dtype=np.uint16)
+    for y in range(0,epi_in.shape[2]):
+        for z in range(0,epi_in.shape[0]):
+            epi_in[z,e_up[z,y]:e_low[z,y],y] = 1
+    # Generate a binary stack with the pixels outside the epidermis set equal to 1
+    epi_out = (epi_in==0)*1
+    # Set all background identified as BG that lies within epidermal boundaries as IAS
+    # Set all background identified as IAS that lies outside epidermal boundaries as BG
+    # FIX: hardcoded values
+    img2 = np.array(img, copy=True)
+    img2[(img2==219)*(epi_out==1)] = 0
+    img2[(img2==0)*(epi_in==1)] = 219
+    # Define 3D array of distances from lower and upper epidermises
+    a = range(0,img2.shape[1])
+    b = np.tile(a,(img2.shape[2],img2.shape[0],1))
+    b = np.moveaxis(b,[0,1,2],[2,0,1])
+    # Determine the lower edge of the spongy/palisade mesophyll
+    c = (img2==146)
+    d = (b*c)
+    m_low = np.argmax(d, axis=1)
+    # Determine the lower edge of the epidermis
+    c = (img2==182)
+    d = (b*c)
+    e_low = np.argmax(d, axis=1)
+    e_low = np.maximum(e_low, m_low) # Checks if mesophyll cells are below lower epidermis
+    e_low = np.apply_along_axis(dbl_pct_filt, 0, arr = e_low)
+    e_low = np.apply_along_axis(min_max_filt, 0, arr = e_low)
+    e_low = np.apply_along_axis(min_max_filt, 0, arr = e_low)
+    epi_low = np.zeros(img2.shape)
+    for z in range(0,epi_low.shape[0]):
+        for x in range(0,epi_low.shape[2]):
+            epi_low[z,e_low[z,x],x] = 1
+    # Determine the upper edge of the epidermis
+    b2 = np.flip(b,1)
+    d = (b2*c)
+    e_up = np.argmax(d, axis=1)
+    epi_up = np.zeros(img2.shape)
+    for z in range(0,epi_up.shape[0]):
+        for x in range(0,epi_up.shape[2]):
+            epi_up[z,e_up[z,x],x] = 1
+    # Generate a binary stack with the pixels inside the epidermis set equal to 1
+    epi_in = np.zeros(img.shape, dtype=np.uint16)
+    for y in range(0,epi_in.shape[2]):
+        for z in range(0,epi_in.shape[0]):
+            epi_in[z,e_up[z,y]:e_low[z,y],y] = 1
+    # Generate a binary stack with the pixels outside the epidermis set equal to 1
+    epi_out = (epi_in==0)*1
+    # Set all background identified as BG that lies within epidermal boundaries as IAS
+    # Set all background identified as IAS that lies outside epidermal boundaries as BG
+    img3 = np.array(img2, copy=True)
+    img3[(img3==219)*(epi_out==1)] = 0
+    img3[(img3==0)*(epi_in==1)] = 219
+    return img3
+
+def delete_dangling_epidermis(img):
+    # Remove 'dangling' epidermal pixels
+    # FIX: hardcoded epidermal pixel value (182)
+    epid = (img==182)
+    epid_rmv_parts = np.array(epid, copy=True)
+    for i in range(0,epid_rmv_parts.shape[0]):
+        epid_rmv_parts[i,:,:] = remove_small_objects(epid[i,:,:], min_size=800)
+    # Write an array of just the removed particles
+    epid_parts = epid ^ epid_rmv_parts
+    # Replace the small connected epidermal particles (< 800 px^2) with BG value
+    # FIX: hardcoded background pixel value (0)
+    img[epid_parts==1] = 0
+    # Free up some memory
+    del epid_rmv_parts
+    del epid
+    return img
+
+def dbl_pct_filt(arr):
+    # Define percentile filter for clipping off artefactual IAS protrusions due to dangling epidermis
+    out = percentile_filter(
+        percentile_filter(
+            arr,
+            size=30,
+            percentile=10),
+        size=30,percentile=90)
+    return out
+
+def min_max_filt(arr):
+    # Define minimmum and maximum filters for clipping off artefactual IAS protrusions due to dangling epidermis
+    # FIX: Perhaps make this variable? User input based?
+    out = minimum_filter(
+        maximum_filter(arr,20),
+        20)
+    return out
 
 def winVar(img, wlen):
     # Variance filter
@@ -622,7 +750,8 @@ def main():
                 print("5. Predict single slices from test dataset")
                 print("6. Predict all slices in 3d microCT stack")
                 print("7. Calculate performance metrics")
-                print("8. Go back")
+                print("8. Post-processing")
+                print("9. Go back")
                 selection = str(input("Select an option (type a number, press enter):\n"))
                 if selection=="1":
                     folder_name = str(raw_input("Enter unique title for folder containing results from this scan:\n"))
@@ -772,7 +901,7 @@ def main():
                             RFPredictCTStack_out = RFPredictCTStack(rf_transverse,gridrec_stack,phaserec_stack,localthick_stack,"transverse")
                         elif selection5=="2": #write stack as a tiff file
                             print("***SAVING PREDICTED STACK***\nSee 'results/yourfoldername' folder")
-                            io.imsave("../results/"+folder_name+"fullstack_pred.tif", img_as_ubyte(RFPredictCTStack_out/len(np.unique(RFPredictCTStack_out[1]))))
+                            io.imsave("../results/"+folder_name+"fullstack_prediction.tif", img_as_ubyte(RFPredictCTStack_out/len(np.unique(RFPredictCTStack_out[1]))))
                         elif selection5=="3": #load full stack prediction
                             # print("You selected option 3. This steps needs updates!")
                             # FIX: throws error due to unsigned int16 format
@@ -784,10 +913,29 @@ def main():
                             print("Not a valid choice.")
                 elif selection=="7": #performance metrics
                     print("You selected option 7. This step needs updating!")
-                    # FIX
+                    # FIX:
                     # performance_metrics(RFPredictCTStack_out,gridphase_test_slices_subset,label_stack,label_test_slices_subset)
-                    # print("This step needs updating!")
-                elif selection=="8": #go back one step
+                elif selection=="8": #post processing
+                    try:
+                        folder_name
+                    except NameError:
+                        folder_name = str(raw_input("Enter unique title for folder containing results from the scan you want to process:\n"))
+                    try:
+                        RFPredictCTStack_out
+                    except NameError:
+                        name2 = raw_input("Enter filename for existing fullstack prediction (located in your custom results folder):\n")
+                        RFPredictCTStack_out = load_fullstack(name2,folder_name)
+                    print("Post-processing...")
+                    step1 = delete_dangling_epidermis(RFPredictCTStack_out)
+                    processed = smooth_epidermis(step1)
+                    print("Would you like to save post processed stack?")
+                    hold = str(input("Enter 1 for yes, or 2 for no:\n"))
+                    if hold == "1":
+                        io.imsave("../results/"+folder_name+"/post_processed_fullstack.tif", processed)
+                        print("See results folder for 'post_processed_fullstack'")
+                    else:
+                        print("Okay. Going back.")
+                elif selection=="9": #go back one step
                     print("Going back one step...")
                 else:
                     print("Not a valid choice.")
