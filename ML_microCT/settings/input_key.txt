@@ -11,6 +11,7 @@ Define label testing slices subset, integers separated by commas only | 2,3
 Run image processing and local thickness boolean** | 1
 Train model boolean** | 1
 Full stack prediction and performance metrics boolean** | 1
+Post-processing boolean, requires full stack prediction | 1
 Folder name for results folder corresponding to this dataset | test1
 
 

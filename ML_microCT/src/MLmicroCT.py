@@ -163,6 +163,30 @@ def min_max_filt(arr):
         20)
     return out
 
+def check_array_orient(arr1,arr2):
+    global arr1_obs
+    if arr1.shape[1] != arr2.shape[1] and arr1.shape[2] != arr2.shape[2]:
+        if arr1.shape[0] != arr2.shape[0]:
+            if arr1.shape[0] == arr2.shape[1]:
+                if arr1.shape[1] == arr2.shape[0]:
+                    arr1_obs = [1,0,2]
+                else:
+                    arr1_obs = [1,2,0]
+            else:
+                if arr1.shape[1] == arr2.shape[0]:
+                    arr1_obs = [2,0,1]
+                else:
+                    arr1_obs = [2,1,0]
+        else:
+            if arr1.shape[2] == arr2.shape[1]:
+                arr1_obs = [0,2,1]
+            else:
+                arr1_obs = [0,1,2]
+        out = np.moveaxis(arr2, source=arr1_obs, destination=[0,1,2])
+    else:
+        out = np.copy(arr2)
+    return out
+
 def winVar(img, wlen):
     # Variance filter
     wmean, wsqrmean = (cv2.boxFilter(x, -1, (wlen,wlen), borderType=cv2.BORDER_REFLECT)
@@ -678,11 +702,12 @@ def openAndReadFile(filename):
     image_process_bool = str(myFile.readline().rstrip('\n'))
     train_model_bool = str(myFile.readline().rstrip('\n'))
     full_stack_bool = str(myFile.readline().rstrip('\n'))
+    post_process_bool = str(myFile.readline().rstrip('\n'))
     folder_name = str(myFile.readline()) #function to read ONE line at a time
     #closes the file
     print("File(s) read successfully")
     myFile.close()
-    return filepath,grid_name,phase_name,label_name,Th_grid,Th_phase,gridphase_train_slices_subset,gridphase_test_slices_subset,label_train_slices_subset,label_test_slices_subset,image_process_bool,train_model_bool,full_stack_bool,folder_name
+    return filepath,grid_name,phase_name,label_name,Th_grid,Th_phase,gridphase_train_slices_subset,gridphase_test_slices_subset,label_train_slices_subset,label_test_slices_subset,image_process_bool,train_model_bool,full_stack_bool,post_process_bool,folder_name
 
 def Load_images(fp,gr_name,pr_name,ls_name):
     #image loading
@@ -697,6 +722,8 @@ def Load_images(fp,gr_name,pr_name,ls_name):
     label_stack = io.imread(fp + ls_name)
     #Invert my label_stack, uncomment as needed
     label_stack = invert(label_stack)
+    # Reorient label stack
+    label_stack = check_array_orient(gridrec_stack,label_stack)
     return gridrec_stack, phaserec_stack, label_stack
 
 def performance_metrics(RFpred,test_slices,label_stack,label_slices,folder_name):
@@ -741,7 +768,7 @@ def main():
         selection_ = str(input("Select an option (type a number, press enter):\n"))
         if selection_=="1":
             selection = "1"
-            while selection != "8":
+            while selection != "9":
                 print("********_____MANUAL MODE MAIN MENU_____********")
                 print("1. Define folder for results, MUST RUN THIS FIRST")
                 print("2. Image loading and pre-processing")
@@ -774,7 +801,7 @@ def main():
                             # grid_name = "gridrec_stack_conc.tif"
                             # phase_name = "phaserec_stack_conc.tif"
                             # label_name = "label_stack_conc.tif"
-                            filepath = raw_input("Enter filepath to .tif stacks, relative to main.py:\n")
+                            filepath = raw_input("Enter filepath to .tif stacks, relative to MLmicroCT.py (usually '../images/'):\n")
                             grid_name = raw_input("Enter filename of grid reconstruction .tif stack:\n")
                             phase_name = raw_input("Enter filename of phase reconstruction .tif stack:\n")
                             label_name = raw_input("Enter filename of labeled .tif stack:\n")
@@ -794,7 +821,7 @@ def main():
                             localthick_up_save(folder_name)
                         elif selection2=="4": #load processed local thickness stack and match array dimensions
                             print("***LOADING LOCAL THICKNESS STACK***")
-                            localthick_stack = io.imread('../results/'+folder_name+'local_thick_upscale.tif')
+                            localthick_stack = io.imread('../results/'+folder_name+'/local_thick_upscale.tif')
                             # Match array dimensions to correct for resolution loss due to downsampling when generating local thickness
                             gridrec_stack, localthick_stack = match_array_dim(gridrec_stack,localthick_stack)
                             phaserec_stack, localthick_stack = match_array_dim(phaserec_stack,localthick_stack)
@@ -901,7 +928,7 @@ def main():
                             RFPredictCTStack_out = RFPredictCTStack(rf_transverse,gridrec_stack,phaserec_stack,localthick_stack,"transverse")
                         elif selection5=="2": #write stack as a tiff file
                             print("***SAVING PREDICTED STACK***\nSee 'results/yourfoldername' folder")
-                            io.imsave("../results/"+folder_name+"fullstack_prediction.tif", img_as_ubyte(RFPredictCTStack_out/len(np.unique(RFPredictCTStack_out[1]))))
+                            io.imsave("../results/"+folder_name+"/fullstack_prediction.tif", img_as_ubyte(RFPredictCTStack_out/len(np.unique(RFPredictCTStack_out[1]))))
                         elif selection5=="3": #load full stack prediction
                             # print("You selected option 3. This steps needs updates!")
                             # FIX: throws error due to unsigned int16 format
@@ -953,7 +980,7 @@ def main():
                 print('Working on batch number: '+str(j+1)+'/'+str(len(filenames)))
                 # FIX: add error handling here
                 #read input file and define variables
-                filepath,grid_name,phase_name,label_name,Th_grid,Th_phase,gridphase_train_slices_subset,gridphase_test_slices_subset,label_train_slices_subset,label_test_slices_subset,image_process_bool,train_model_bool,full_stack_bool,folder_name = openAndReadFile("../settings/"+filenames[j])
+                filepath,grid_name,phase_name,label_name,Th_grid,Th_phase,gridphase_train_slices_subset,gridphase_test_slices_subset,label_train_slices_subset,label_test_slices_subset,image_process_bool,train_model_bool,full_stack_bool,post_process_bool,folder_name = openAndReadFile("../settings/"+filenames[j])
                 #check for and possibly create repo for all results
                 # print(filepath)
                 # print(grid_name)
@@ -1026,6 +1053,16 @@ def main():
                     # performance_metrics(RFPredictCTStack_out,gridphase_test_slices_subset,label_stack,label_test_slices_subset)
                 else:
                     print("SKIPPED FULL STACK PREDICTION AND PERFORMANCE METRICS")
+                if post_process_bool=="1":
+                    RFPredictCTStack_out = io.imread('../results/'+folder_name+'/fullstack_prediction.tif')
+                    print("Post-processing...")
+                    step1 = delete_dangling_epidermis(RFPredictCTStack_out)
+                    processed = smooth_epidermis(step1)
+                    print("Saving post-processed full stack prediction...")
+                    io.imsave("../results/"+folder_name+"/post_processed_fullstack.tif", processed)
+                    print("See results folder for 'post_processed_fullstack'")
+                else:
+                    print("SKIPPED POST-PROCESSING")
                 j = j + 1
         elif selection_=="3":
             print("Session Ended")
