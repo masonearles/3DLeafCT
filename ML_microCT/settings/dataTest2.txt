@@ -11,5 +11,9 @@ label_stack_conc_t2_starch.tif
 0
 0
 0
-1
+0
+3
+3
+3
+3
 test2_invert_starch_smooth

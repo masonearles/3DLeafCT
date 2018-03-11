@@ -23,9 +23,11 @@ from sklearn.metrics import accuracy_score, confusion_matrix
 import matplotlib.pyplot as plt
 import pandas as pd
 from scipy import misc
-
 from scipy.ndimage.filters import maximum_filter, median_filter, minimum_filter, percentile_filter
 from scipy.ndimage.morphology import distance_transform_edt
+# Suppress all warnings (not errors) by uncommenting next two lines of code
+import warnings
+warnings.filterwarnings("ignore")
 
 # Filter parameters; Label encoder setup
 disk_size=5
@@ -38,31 +40,31 @@ num_feature_layers = 37 # grid and phase recon; plus gaussian blurs; plus hessia
 # Import label encoder
 labenc = LabelEncoder()
 
-def smooth_epidermis(img):
+def smooth_epidermis(img,epidermis,background,mesophyll,ias):
     # FIX: clean this up, perhaps break into multiple functions
     # Define 3D array of distances from lower and upper epidermises
     a = range(0,img.shape[1])
     b = np.tile(a,(img.shape[2],img.shape[0],1))
     b = np.moveaxis(b,[0,1,2],[2,0,1])
-    # Determine the lower edge of the spongy/palisade mesophyll
+    # Determine the lower edge of the spongy mesophyll (or whichever mesophyll is closest to bottom of image)
     # FIX: hardcoded values
-    c = (img==146)
+    c = (img==epidermis)
     d = (b*c)
     m_low = np.argmax(d, axis=1)
     # Determine the lower edge of the vascular bundle
-    c = (img==146)
+    c = (img==mesophyll)
     d = (b*c)
     v_low = np.argmax(d, axis=1)
     # Determine the lower edge of the epidermis
     # FIX: harcoded values
-    c = (img==182)
+    c = (img==epidermis)
     d = (b*c)
     e_low = np.argmax(d, axis=1)
     e_low = np.maximum(e_low, m_low) # Checks if mesophyll cells are below lower epidermis
                                      # Changes lowest mesophyll pixel to epidermal class
     e_low = np.maximum(e_low, v_low) # Similar to above, but with vascular bundle
     epi_low = np.zeros(img.shape)
-    for z in range(0,epi_low.shape[0]):
+    for z in tqdm(range(0,epi_low.shape[0])):
         for x in range(0,epi_low.shape[2]):
             epi_low[z,e_low[z,x],x] = 1
     # Determine the upper edge of the epidermis
@@ -70,12 +72,12 @@ def smooth_epidermis(img):
     d = (b2*c)
     e_up = np.argmax(d, axis=1)
     epi_up = np.zeros(img.shape)
-    for z in range(0,epi_up.shape[0]):
+    for z in tqdm(range(0,epi_up.shape[0])):
         for x in range(0,epi_up.shape[2]):
             epi_up[z,e_up[z,x],x] = 1
     # Generate a binary stack with the pixels inside the epidermis set equal to 1
     epi_in = np.zeros(img.shape, dtype=np.uint16)
-    for y in range(0,epi_in.shape[2]):
+    for y in tqdm(range(0,epi_in.shape[2])):
         for z in range(0,epi_in.shape[0]):
             epi_in[z,e_up[z,y]:e_low[z,y],y] = 1
     # Generate a binary stack with the pixels outside the epidermis set equal to 1
@@ -84,18 +86,18 @@ def smooth_epidermis(img):
     # Set all background identified as IAS that lies outside epidermal boundaries as BG
     # FIX: hardcoded values
     img2 = np.array(img, copy=True)
-    img2[(img2==219)*(epi_out==1)] = 0
-    img2[(img2==0)*(epi_in==1)] = 219
+    img2[(img2==ias)*(epi_out==1)] = background
+    img2[(img2==background)*(epi_in==1)] = ias
     # Define 3D array of distances from lower and upper epidermises
     a = range(0,img2.shape[1])
     b = np.tile(a,(img2.shape[2],img2.shape[0],1))
     b = np.moveaxis(b,[0,1,2],[2,0,1])
-    # Determine the lower edge of the spongy/palisade mesophyll
-    c = (img2==146)
+    # Determine the lower edge of the spongy mesophyll (or whichever is closest to bottom of image)
+    c = (img2==mesophyll)
     d = (b*c)
     m_low = np.argmax(d, axis=1)
     # Determine the lower edge of the epidermis
-    c = (img2==182)
+    c = (img2==epidermis)
     d = (b*c)
     e_low = np.argmax(d, axis=1)
     e_low = np.maximum(e_low, m_low) # Checks if mesophyll cells are below lower epidermis
@@ -103,7 +105,7 @@ def smooth_epidermis(img):
     e_low = np.apply_along_axis(min_max_filt, 0, arr = e_low)
     e_low = np.apply_along_axis(min_max_filt, 0, arr = e_low)
     epi_low = np.zeros(img2.shape)
-    for z in range(0,epi_low.shape[0]):
+    for z in tqdm(range(0,epi_low.shape[0])):
         for x in range(0,epi_low.shape[2]):
             epi_low[z,e_low[z,x],x] = 1
     # Determine the upper edge of the epidermis
@@ -111,12 +113,12 @@ def smooth_epidermis(img):
     d = (b2*c)
     e_up = np.argmax(d, axis=1)
     epi_up = np.zeros(img2.shape)
-    for z in range(0,epi_up.shape[0]):
+    for z in tqdm(range(0,epi_up.shape[0])):
         for x in range(0,epi_up.shape[2]):
             epi_up[z,e_up[z,x],x] = 1
     # Generate a binary stack with the pixels inside the epidermis set equal to 1
     epi_in = np.zeros(img.shape, dtype=np.uint16)
-    for y in range(0,epi_in.shape[2]):
+    for y in tqdm(range(0,epi_in.shape[2])):
         for z in range(0,epi_in.shape[0]):
             epi_in[z,e_up[z,y]:e_low[z,y],y] = 1
     # Generate a binary stack with the pixels outside the epidermis set equal to 1
@@ -124,22 +126,22 @@ def smooth_epidermis(img):
     # Set all background identified as BG that lies within epidermal boundaries as IAS
     # Set all background identified as IAS that lies outside epidermal boundaries as BG
     img3 = np.array(img2, copy=True)
-    img3[(img3==219)*(epi_out==1)] = 0
-    img3[(img3==0)*(epi_in==1)] = 219
+    img3[(img3==ias)*(epi_out==1)] = background
+    img3[(img3==background)*(epi_in==1)] = ias
     return img3
 
-def delete_dangling_epidermis(img):
+def delete_dangling_epidermis(img,epidermis,background):
     # Remove 'dangling' epidermal pixels
     # FIX: hardcoded epidermal pixel value (182)
-    epid = (img==182)
+    epid = (img==epidermis)
     epid_rmv_parts = np.array(epid, copy=True)
-    for i in range(0,epid_rmv_parts.shape[0]):
+    for i in tqdm(range(0,epid_rmv_parts.shape[0])):
         epid_rmv_parts[i,:,:] = remove_small_objects(epid[i,:,:], min_size=800)
     # Write an array of just the removed particles
     epid_parts = epid ^ epid_rmv_parts
     # Replace the small connected epidermal particles (< 800 px^2) with BG value
     # FIX: hardcoded background pixel value (0)
-    img[epid_parts==1] = 0
+    img[epid_parts==1] = background
     # Free up some memory
     del epid_rmv_parts
     del epid
@@ -261,8 +263,7 @@ def RFPredictCTStack(rf_transverse,gridimg_in, phaseimg_in, localthick_cellvein_
 
 def check_images(prediction_prob_imgs,prediction_imgs,observed_imgs,FL_imgs,phaserec_stack,folder_name):
     # Plot images of class probabilities, predicted classes, observed classes, and feature layer of interest
-    #FIX: add error handling here to clean up output
-    #FIX: 4/5 images are just black rectangles..address this
+    #SUPPRESS
     if os.path.exists('../results/'+folder_name+'/qc') == False:
         os.mkdir('../results/'+folder_name+'/qc')
     for i in range(0,prediction_imgs.shape[0]):
@@ -286,10 +287,10 @@ def check_images(prediction_prob_imgs,prediction_imgs,observed_imgs,FL_imgs,phas
         location = '../results/'+folder_name+'/qc/feature_layerIMG'+str(i)+'.tif'
         img5 = (img_as_ubyte(FL_imgs[0,:,:,26].astype(np.uint64)))*85
         io.imsave(location, img5)
-    print("See 'results/yourfoldername/qc' folder for quality control images")
+    print("\nSee 'results/yourfoldername/qc' folder for quality control images\n")
 
 def reshape_arrays(class_prediction_prob,class_prediction,Label_test,FL_test,label_stack):
-    print("***RESHAPING ARRAYS***")
+    # print("***RESHAPING ARRAYS***")
     # Reshape arrays for plotting images of class probabilities, predicted classes, observed classes, and feature layer of interest
     prediction_prob_imgs = class_prediction_prob.reshape((
         -1,
@@ -374,10 +375,10 @@ def displayImages_displayDims(gr_s,pr_s,ls,lt_s,gp_train,gp_test,label_train,lab
     #     io.show()
 
     #check shapes of stacks to ensure they match
-    print(gr_s.shape)
-    print(pr_s.shape)
-    print(ls.shape)
-    print(lt_s.shape)
+    print('Gridrec stack shape = ' + str(gr_s.shape))
+    print('Phaserec stack shape = ' + str(pr_s.shape))
+    print('Label stack shape = ' + str(ls.shape))
+    print('Local thickness stack shape = ' + str(lt_s.shape))
 
 def LoadCTStack(gridimg_in,sub_slices,section):
     # Define image dimensions
@@ -562,10 +563,12 @@ def save_trainmodel(rf_t,FL_train,FL_test,Label_train,Label_test,folder_name):
     pickle.dump(rf_t, open(filename, 'wb'))
     print("***SAVING FEATURE LAYER ARRAYS***")
     #save training and testing feature layer array
+    #SUPPRESS
     io.imsave('../results/'+folder_name+'/FL_train.tif',FL_train)
     io.imsave('../results/'+folder_name+'/FL_test.tif',FL_test)
     print("***SAVING LABEL IMAGE VECTORS***")
     #save label image vectors
+    #SUPPRESS
     io.imsave('../results/'+folder_name+'/Label_train.tif',Label_train)
     io.imsave('../results/'+folder_name+'/Label_test.tif',Label_test)
 
@@ -579,7 +582,7 @@ def train_model(gr_s,pr_s,ls,lt_s,gp_train,gp_test,label_train,label_test):
     # Load and encode label image vectors
     Label_train = LoadLabelData(ls, label_train, "transverse")
     Label_test = LoadLabelData(ls, label_test, "transverse")
-    print("***TRAINING MODEL***")
+    print("***TRAINING MODEL***\n(this step may take a few minutes...)")
     # Define Random Forest classifier parameters and fit model
     rf_trans = RandomForestClassifier(n_estimators=50, verbose=True, oob_score=True, n_jobs=-1, warm_start=False) #, class_weight="balanced")
     rf_trans = rf_trans.fit(FL_train_transverse, Label_train)
@@ -657,6 +660,7 @@ def Threshold_GridPhase_invert_down(grid_img, phase_img, Th_grid, Th_phase,folde
     #invert
     tmp_invert = invert(tmp)
     #downsample to 25%
+    #SUPPRESS WARNING HERE
     tmp_invert_ds = transform.rescale(tmp_invert, 0.25)
     print("***SAVING IMAGE STACK***")
     #write as a .tif file in custom results folder
@@ -703,11 +707,14 @@ def openAndReadFile(filename):
     train_model_bool = str(myFile.readline().rstrip('\n'))
     full_stack_bool = str(myFile.readline().rstrip('\n'))
     post_process_bool = str(myFile.readline().rstrip('\n'))
+    epid_value = int(myFile.readline().rstrip('\n'))
+    bg_value = int(myFile.readline().rstrip('\n'))
+    meso_value = int(myFile.readline().rstrip('\n'))
+    ias_value = int(myFile.readline().rstrip('\n'))
     folder_name = str(myFile.readline()) #function to read ONE line at a time
     #closes the file
-    print("File(s) read successfully")
     myFile.close()
-    return filepath,grid_name,phase_name,label_name,Th_grid,Th_phase,gridphase_train_slices_subset,gridphase_test_slices_subset,label_train_slices_subset,label_test_slices_subset,image_process_bool,train_model_bool,full_stack_bool,post_process_bool,folder_name
+    return filepath,grid_name,phase_name,label_name,Th_grid,Th_phase,gridphase_train_slices_subset,gridphase_test_slices_subset,label_train_slices_subset,label_test_slices_subset,image_process_bool,train_model_bool,full_stack_bool,post_process_bool,epid_value,bg_value,meso_value,ias_value,folder_name
 
 def Load_images(fp,gr_name,pr_name,ls_name):
     #image loading
@@ -759,8 +766,8 @@ def load_fullstack(filename,folder_name):
 
 def main():
     selection_ = "1"
-    print("*******_____STARTED ML_microCT_____*******")
     while selection_ != "3":
+        selection_ = "1"
         print("*******_____MAIN MENU_____*******")
         print("1. Manual Mode")
         print("2. Read From File Mode")
@@ -768,31 +775,29 @@ def main():
         selection_ = str(input("Select an option (type a number, press enter):\n"))
         if selection_=="1":
             selection = "1"
-            while selection != "9":
+            folder_name = str(raw_input("Enter unique title for folder containing results from this scan:\n"))
+            if os.path.exists("../results/" + folder_name) == False:
+                os.makedirs("../results/" + folder_name)
+            print("\nYour custom results folder exists or was created successfully.\nSee folder in 'ML_microCT/results/' directory.\n")
+            while selection != "8":
                 print("********_____MANUAL MODE MAIN MENU_____********")
-                print("1. Define folder for results, MUST RUN THIS FIRST")
-                print("2. Image loading and pre-processing")
-                print("3. Train model")
-                print("4. Examine prediction metrics on training dataset")
-                print("5. Predict single slices from test dataset")
-                print("6. Predict all slices in 3d microCT stack")
+                print("1. Image loading and pre-processing")
+                print("2. Train model")
+                print("3. Examine prediction metrics on training dataset")
+                print("4. Predict single slices from test dataset")
+                print("5. Predict all slices in 3d microCT stack")
+                print("6. Post-processing")
                 print("7. Calculate performance metrics")
-                print("8. Post-processing")
-                print("9. Go back")
+                print("8. Go back")
                 selection = str(input("Select an option (type a number, press enter):\n"))
-                if selection=="1":
-                    folder_name = str(raw_input("Enter unique title for folder containing results from this scan:\n"))
-                    if os.path.exists("../results/" + folder_name) == False:
-                        os.makedirs("../results/" + folder_name)
-                    print("Your custom results folder exists or was created successfully.\nSee folder in 'ML_microCT/results/'' directory")
-                elif selection=="2": #image loading and pre-processing
+                if selection=="1": #image loading and pre-processing
                     selection2 = "1"
                     while selection2 != "5":
                         print("********_____IMAGE LOADING AND PRE-PROCESSING MENU_____********")
                         print("1. Load image stacks")
                         print("2. Generate binary threshold image, invert, downsample and save")
                         print("3. Run local thickness algorithm (requires downsampled tif), upsample and save")
-                        print("4. Load processed local thickness stack")
+                        print("4. Load processed local thickness stack and match array dimensions")
                         print("5. Go back")
                         selection2 = str(input("Select an option (type a number, press enter):\n"))
                         if selection2=="1": #load image stacks
@@ -806,14 +811,12 @@ def main():
                             phase_name = raw_input("Enter filename of phase reconstruction .tif stack:\n")
                             label_name = raw_input("Enter filename of labeled .tif stack:\n")
                             if os.path.exists(filepath + grid_name) == False or os.path.exists(filepath + phase_name) == False or os.path.exists(filepath + label_name) == False:
-                                    print("Try again, at least some of the information you entered is incorrect")
+                                    print("Try again, at least some of the information you entered is incorrect.")
                             else:
                                 gridrec_stack, phaserec_stack, label_stack = Load_images(filepath,grid_name,phase_name,label_name)
                         elif selection2=="2": #generate binary threshold image, invert, downsample and save
                             Th_grid = float(raw_input("Enter subjective lower threshold value for grid-phase reconstruction images, determined in FIJI.\n"))
-                            # Th_grid = float(Th_grid)
                             Th_phase = float(raw_input("Enter subjective upper threshold value for grid-phase reconstruction images, determined in FIJI.\n"))
-                            # Th_phase = float(Th_phase)
                             # Th_grid = -22.09
                             # Th_phase = 0.6
                             Threshold_GridPhase_invert_down(gridrec_stack,phaserec_stack,Th_grid,Th_phase,folder_name)
@@ -830,157 +833,193 @@ def main():
                             print("Going back one step...")
                         else:
                             print("Not a valid choice.")
-                elif selection=="3": #train model
+                elif selection=="2": #train model
                     selection3="1"
-                    while selection3 != "6":
+                    while selection3 != "5":
                         print("********_____TRAIN MODEL MENU_____********")
                         print("1. Define image subsets for training and testing")
-                        print("2. Display some images from each stack and stack dimensions for QC")
-                        print("3. Train model")
-                        print("4. Save trained model and feature layer arrays")
-                        print("5. Load trained model and feature layer arrays")
-                        print("6. Go back")
+                        print("2. Display stack dimensions for QC") #removed image QC at this stage in pipeline
+                        print("3. Train model, then save trained model and feature layer arrays")
+                        print("4. Load trained model and feature layer arrays")
+                        print("5. Go back")
                         selection3 = str(input("Select an option (type a number, press enter):\n"))
                         if selection3=="1": #define image subsets for training and testing
-                            gridphase_train_slices_subset = []
+                            gridphase_train_slices_subset = [] # resets to empty list or initializes empty list
                             gridphase_test_slices_subset = []
                             label_train_slices_subset = []
                             label_test_slices_subset = []
                             print("***DEFINING IMAGE SUBSETS***")
-                            count = int(input("Enter number of slices in grid-phase train/test subset:\n"))
-                            for i in range(0,count):
-                                hold = int(raw_input("Enter number for grid-phase TRAINING slice subset, one at a time, in order\n(you will be prompted again for subsequent numbers):\n"))
-                                gridphase_train_slices_subset.append(hold)
-                            for i in range(0,count):
-                                hold2 = int(raw_input("Enter number for grid-phase TESTING slice(s) subset, one at a time, in order\n(you will be prompted again for subsequent numbers):\n"))
-                                gridphase_test_slices_subset.append(hold2)
-                            count = int(input("Enter number of slices in labeled images train/test subset:\n"))
-                            for i in range (0,count):
-                                hold3 = int(raw_input("Enter number for labeled images TRAINING slice(s) subset, one at a time, in order\n(you will be prompted again for subsequent numbers):\n"))
-                                label_train_slices_subset.append(hold3)
-                            for i in range (0,count):
-                                hold4 = int(raw_input("Enter number for labeled images TESTING slice(s) subset, one at a time, in order\n(you will be prompted again for subsequent numbers):\n"))
-                                label_test_slices_subset.append(hold4)
+                            catch = str(raw_input("Enter slice numbers for grid-phase TRAINING slice(s) subset, in order separated by commas\nExamples: '72,350,621' or '0,1' or '14'\n"))
+                            for z in catch.split(','):
+                                z.strip()
+                                gridphase_train_slices_subset.append(int(z))
+                            catch = str(raw_input("Enter slice numbers for grid-phase TESTING slice(s) subset, in order separated by commas:\n"))
+                            for z in catch.split(','):
+                                z.strip()
+                                gridphase_test_slices_subset.append(int(z))
+                            catch = str(raw_input("Enter slice numbers for labeled TRAINING slice(s) subset, in order separated by commas:\n"))
+                            for z in catch.split(','):
+                                z.strip()
+                                label_train_slices_subset.append(int(z))
+                            catch = str(raw_input("Enter slice numbers for labeled TESTING slice(s) subset, in order separated by commas:\n"))
+                            for z in catch.split(','):
+                                z.strip()
+                                label_test_slices_subset.append(int(z))
                             # gridphase_train_slices_subset = [45]
                             # gridphase_test_slices_subset = [245]
                             # label_train_slices_subset = [1]
                             # label_test_slices_subset = [0]
-                        elif selection3=="2": #plot some images and stack dimensions
+                        elif selection3=="2": #plot some images (removed image printing) and stack dimensions
                             displayImages_displayDims(gridrec_stack,phaserec_stack,label_stack,localthick_stack,gridphase_train_slices_subset,gridphase_test_slices_subset,label_train_slices_subset,label_test_slices_subset)
-                        elif selection3=="3": #train model
+                        elif selection3=="3": #train model then save trained model and feature layers
                             rf_transverse,FL_train,FL_test,Label_train,Label_test = train_model(gridrec_stack,phaserec_stack,label_stack,localthick_stack,gridphase_train_slices_subset,gridphase_test_slices_subset,label_train_slices_subset,label_test_slices_subset)
-                        elif selection3=="4": #save trained model and other arrays from step 3 to disk
-                            save_trainmodel(rf_transverse,FL_train,FL_test,Label_train,Label_test,folder_name)
-                        elif selection3=="5": #load trained model and other arrays from step 4, to skip 1-4 if already ran
+                            print("Would you like to save trained model and accompanying data?")
+                            hold = str(input("Enter 1 for yes, or 2 for no:\n"))
+                            if hold == "1":
+                                save_trainmodel(rf_transverse,FL_train,FL_test,Label_train,Label_test,folder_name)
+                                print("See 'results/"+folder_name+"' folder")
+                            else:
+                                print("Okay. Going back.")
+                        elif selection3=="4": #load trained model and other arrays from step 4, to skip 1-4 if already ran
                             rf_transverse,FL_train,FL_test,Label_train,Label_test = load_trainmodel(folder_name)
-                        elif selection3=="6": #go back one step
+                        elif selection3=="5": #go back one step
                             print("Going back one step...")
                         else:
                             print("Not a valid choice.")
-                elif selection=="4": #examine prediction metrics on training dataset
+                elif selection=="3": #examine prediction metrics on training dataset
                     # Print out of bag precition accuracy
                     hold = "1"
                     print('Our Out Of Box prediction of accuracy is: {oob}%'.format(oob=rf_transverse.oob_score_ * 100))
                     print("Would you like to print feature layer importance?")
                     hold = str(input("Enter 1 for yes, or 2 for no:\n"))
                     if hold == "1":
-                        print_feature_layers(rf_transverse)
+                        print_feature_layers(rf_transverse,folder_name)
                         print("See results folder for feature layer importance")
                     else:
                         print("Okay. Going back.")
-                elif selection=="5": #predict single slices
-                    #print("You selected option 4")
+                elif selection=="4": #predict single slices
                     selection4="1"
-                    while selection4 != "4":
+                    while selection4 != "3":
                         print("********_____SINGLE SLICE PREDICTIONS MENU_____********")
                         print("1. Predict single slices from test dataset")
-                        print("2. Generate confusion matrices")
-                        print("3. Plot images")
-                        print("4. Go back")
+                        print("2. Generate confusion matrices") #plot images has been (temporarily) removed
+                        print("3. Go back")
                         selection4 = str(input("Select an option (type a number, press enter):\n"))
                         if selection4=="1": #predict single slices from test dataset
                             class_prediction, class_prediction_prob = predict_testset(rf_transverse,FL_test)
-                        elif selection4=="2": #generate confusion matrices
-                            print("Confusion Matrix")
+                        elif selection4=="2": #generate confusion matrices and plot images
+                            print("\nConfusion Matrix")
                             make_conf_matrix(Label_test,class_prediction,folder_name)
-                            print("___________________________________________")
+                            print("\n______________________________________________________________\n")
                             print("Normalized Confusion Matrix")
                             make_normconf_matrix(Label_test,class_prediction,folder_name)
-                        elif selection4=="3": #plot images
-                            print("Quality Control images saved to 'images/qc' folder.")
                             prediction_prob_imgs,prediction_imgs,observed_imgs,FL_imgs = reshape_arrays(class_prediction_prob,class_prediction,Label_test,FL_test,label_stack)
-                            check_images(prediction_prob_imgs,prediction_imgs,observed_imgs,FL_imgs,phaserec_stack)
-                        elif selection4=="4": #go back one step
+                            check_images(prediction_prob_imgs,prediction_imgs,observed_imgs,FL_imgs,phaserec_stack,folder_name)
+                        elif selection4=="3": #go back one step
                             print("Going back one step...")
                         else:
                             print("Not a valid choice.")
-                elif selection=="6": #predict all slices in 3d stack
+                elif selection=="5": #predict all slices in 3d stack
                     selection5="1"
                     while selection5 != "3":
                         print("********_____FULL STACK PREDICTIONS MENU_____********")
-                        print("1. Predict full stack")
-                        print("2. Write stack as .tif file")
-                        print("3. Load existing full stack prediction")
-                        print("4. Go back")
+                        print("1. Predict full stack and save")
+                        print("2. Load existing full stack prediction")
+                        print("3. Go back")
                         selection5 = str(input("Select an option (type a number, press enter):\n"))
-                        if selection5=="1": #predict full stack
+                        if selection5=="1": #predict full stack and save
                             print("***PREDICTING FULL STACK***")
                             RFPredictCTStack_out = RFPredictCTStack(rf_transverse,gridrec_stack,phaserec_stack,localthick_stack,"transverse")
-                        elif selection5=="2": #write stack as a tiff file
-                            print("***SAVING PREDICTED STACK***\nSee 'results/yourfoldername' folder")
-                            io.imsave("../results/"+folder_name+"/fullstack_prediction.tif", img_as_ubyte(RFPredictCTStack_out/len(np.unique(RFPredictCTStack_out[1]))))
-                        elif selection5=="3": #load full stack prediction
-                            # print("You selected option 3. This steps needs updates!")
-                            # FIX: throws error due to unsigned int16 format
-                            name2 = raw_input("Enter filename for existing fullstack prediction (located in your custom results folder):\n")
-                            RFPredictCTStack_out = load_fullstack(name2,folder_name)
-                        elif selection5=="4": #go back one step
+                            print("Would you like to save full stack prediction?")
+                            hold = str(input("Enter 1 for yes, or 2 for no:\n"))
+                            if hold == "1":
+                                print("***SAVING PREDICTED STACK***")
+                                io.imsave("../results/"+folder_name+"/fullstack_prediction.tif", img_as_ubyte(RFPredictCTStack_out/len(np.unique(RFPredictCTStack_out[1]))))
+                                print("See results folder for 'fullstack_prediction'")
+                            else:
+                                print("Okay. Going back.")
+                        elif selection5=="2": #load full stack prediction
+                            name2 = str(raw_input("Enter filename for existing fullstack prediction (located in your custom results folder):\n(will be 'fullstack_prediction.tif' unless manually altered)\n"))
+                            if os.path.exists('../results/' + folder_name + '/' + name2) == False:
+                                print("\nFile is not present in 'results/yourfoldername' or filename was entered incorrectly.\n")
+                            else:
+                                RFPredictCTStack_out = load_fullstack(name2,folder_name)
+                        elif selection5=="3": #go back one step
+                            print("Going back one step...")
+                        else:
+                            print("Not a valid choice.")
+                elif selection=="6": #post-processing
+                    selection6="1"
+                    while selection6 != "4":
+                        print("********_____POST-PROCESSING MENU_____********")
+                        print("1. Smooth epidermis and correct false predictions")
+                        print("2. Generate a 3D mesh for some or all classes")
+                        print("3. Trait measurement")
+                        print("4. Go back")
+                        selection6 = str(input("Select an option (type a number, press enter):\n"))
+                        if selection6=="1": #post processing, smoothing and prediction correction
+                            try:
+                                folder_name
+                            except NameError:
+                                folder_name = str(raw_input("Enter unique title for folder containing results from the scan you want to process:\n"))
+                            try:
+                                RFPredictCTStack_out
+                            except NameError:
+                                name2 = raw_input("Enter filename for existing fullstack prediction (located in your custom results folder):\n")
+                                RFPredictCTStack_out = load_fullstack(name2,folder_name)
+                            print("\nIn order to complete post-processing you must manually complete the following steps:")
+                            print("1) Navigate to your custom results folder and open corresponding full stack prediction using ImageJ or FIJI.")
+                            print("2) Move reticle over image and note pixel values (range 0-255, displayed passively on the 'Developer Menu').\nRecord values for epidermis, background, lowermost mesophyll class, and intercellular air space pixels.\n")
+                            proceed = str(input("\nWould you like to proceed?\nEnter 1 for yes, or 2 for no:\n"))
+                            if proceed == "1":
+                                epid_value = int(input("Enter value for epidermis pixels:\n"))
+                                bg_value = int(input("Enter value for background pixels:\n"))
+                                meso_value = int(input("Enter value for mesophyll pixels closest to bottom edge of image:\n"))
+                                ias_value = int(input("Enter value for intercellular air space pixels:\n"))
+                            print("Post-processing...")
+                            step1 = delete_dangling_epidermis(RFPredictCTStack_out,epid_value,bg_value)
+                            processed = smooth_epidermis(step1,epid_value,bg_value,meso_value,ias_value)
+                            print("\nWould you like to save post processed stack?")
+                            hold = str(input("Enter 1 for yes, or 2 for no:\n"))
+                            if hold == "1":
+                                io.imsave("../results/"+folder_name+"/post_processed_fullstack.tif", processed)
+                                print("See results folder for 'post_processed_fullstack'")
+                            else:
+                                print("Okay. Going back.")
+                        elif selection6=="2": #export 3D mesh
+                            print("FIX: update generation of 3D mesh")
+                        elif selection6=="3": #trait measurement
+                            print("FIX: update trait measurement")
+                        elif selection6=="4": #go back one step
                             print("Going back one step...")
                         else:
                             print("Not a valid choice.")
                 elif selection=="7": #performance metrics
                     print("You selected option 7. This step needs updating!")
-                    # FIX:
+                    # FIX: should offer pre and post-processed scores
                     # performance_metrics(RFPredictCTStack_out,gridphase_test_slices_subset,label_stack,label_test_slices_subset)
-                elif selection=="8": #post processing
-                    try:
-                        folder_name
-                    except NameError:
-                        folder_name = str(raw_input("Enter unique title for folder containing results from the scan you want to process:\n"))
-                    try:
-                        RFPredictCTStack_out
-                    except NameError:
-                        name2 = raw_input("Enter filename for existing fullstack prediction (located in your custom results folder):\n")
-                        RFPredictCTStack_out = load_fullstack(name2,folder_name)
-                    print("Post-processing...")
-                    step1 = delete_dangling_epidermis(RFPredictCTStack_out)
-                    processed = smooth_epidermis(step1)
-                    print("Would you like to save post processed stack?")
-                    hold = str(input("Enter 1 for yes, or 2 for no:\n"))
-                    if hold == "1":
-                        io.imsave("../results/"+folder_name+"/post_processed_fullstack.tif", processed)
-                        print("See results folder for 'post_processed_fullstack'")
-                    else:
-                        print("Okay. Going back.")
-                elif selection=="9": #go back one step
+                elif selection=="8": #go back one step
                     print("Going back one step...")
                 else:
                     print("Not a valid choice.")
         elif selection_=="2":
-            global batch_count, filenames
-            batch_count = int(input('Enter number of batches you would like to run\n'))
-            i = 0
+            global filenames
             j = 0
+            permission = 0
             filenames = []
-            while i < batch_count:
-                name = str(raw_input('Enter filenames one at a time, you will be prompted again if necessary.\n'))
-                filenames.append(name)
-                i = i+1
-            while j < len(filenames):
-                print('Working on batch number: '+str(j+1)+'/'+str(len(filenames)))
+            catch = str(raw_input("Enter filename(s) of '.txt' instruction files, in order separated by commas:\nExamples: 'file_name.txt,file_2.txt'\n"))
+            for z in catch.split(','):
+                z.strip()
+                filenames.append(z)
+            for i in range(0,len(filenames)):
+                if os.path.exists('../settings/'+filenames[i]) == False:
+                    print("\nAt least some of the information you entered is incorrect. Try again.")
+                    permission = 1
+            while j < len(filenames) and permission == 0:
+                print('\nWorking on batch number: '+str(j+1)+'/'+str(len(filenames))+'\n')
                 # FIX: add error handling here
                 #read input file and define variables
-                filepath,grid_name,phase_name,label_name,Th_grid,Th_phase,gridphase_train_slices_subset,gridphase_test_slices_subset,label_train_slices_subset,label_test_slices_subset,image_process_bool,train_model_bool,full_stack_bool,post_process_bool,folder_name = openAndReadFile("../settings/"+filenames[j])
+                filepath,grid_name,phase_name,label_name,Th_grid,Th_phase,gridphase_train_slices_subset,gridphase_test_slices_subset,label_train_slices_subset,label_test_slices_subset,image_process_bool,train_model_bool,full_stack_bool,post_process_bool,epid_value,bg_value,meso_value,ias_value,folder_name = openAndReadFile("../settings/"+filenames[j])
                 #check for and possibly create repo for all results
                 # print(filepath)
                 # print(grid_name)
@@ -998,7 +1037,7 @@ def main():
                 # print(folder_name)
                 if os.path.exists("../results/" + folder_name) == False:
                     os.makedirs("../results/" + folder_name)
-                print("Your custom results folder exists or was created successfully.\nSee folder in 'ML_microCT/results/' directory")
+                print("Your custom results folder exists or was created successfully.\nSee folder in 'ML_microCT/results/' directory.\n")
                 #load images
                 gridrec_stack, phaserec_stack, label_stack = Load_images(filepath,grid_name,phase_name,label_name)
                 if image_process_bool=="1":
@@ -1031,13 +1070,11 @@ def main():
                 class_prediction, class_prediction_prob = predict_testset(rf_transverse,FL_test)
                 # Print out of bag precition accuracy and feature layer importance to results folder
                 print_feature_layers(rf_transverse,folder_name)
-                print("Confusion Matrix")
+                print("\nConfusion Matrix")
                 make_conf_matrix(Label_test,class_prediction,folder_name)
-                print("___________________________________________")
+                print("\n___________________________________________________\n")
                 print("Normalized Confusion Matrix")
                 make_normconf_matrix(Label_test,class_prediction,folder_name)
-                #plot images
-                print("This step needs updating!")
                 #reshape arrays
                 prediction_prob_imgs,prediction_imgs,observed_imgs,FL_imgs = reshape_arrays(class_prediction_prob,class_prediction,Label_test,FL_test,label_stack)
                 #print images to file
@@ -1052,15 +1089,15 @@ def main():
                     io.imsave('../results/'+folder_name+'/fullstack_prediction.tif', img_as_ubyte(RFPredictCTStack_out/len(np.unique(RFPredictCTStack_out[1]))))
                     # performance_metrics(RFPredictCTStack_out,gridphase_test_slices_subset,label_stack,label_test_slices_subset)
                 else:
-                    print("SKIPPED FULL STACK PREDICTION AND PERFORMANCE METRICS")
+                    print("SKIPPED FULL STACK PREDICTION")
                 if post_process_bool=="1":
                     RFPredictCTStack_out = io.imread('../results/'+folder_name+'/fullstack_prediction.tif')
                     print("Post-processing...")
-                    step1 = delete_dangling_epidermis(RFPredictCTStack_out)
-                    processed = smooth_epidermis(step1)
+                    step1 = delete_dangling_epidermis(RFPredictCTStack_out,epid_value,bg_value)
+                    processed = smooth_epidermis(step1,epid_value,bg_value,meso_value,ias_value)
                     print("Saving post-processed full stack prediction...")
                     io.imsave("../results/"+folder_name+"/post_processed_fullstack.tif", processed)
-                    print("See results folder for 'post_processed_fullstack'")
+                    print("See results folder for 'post_processed_fullstack.tif'")
                 else:
                     print("SKIPPED POST-PROCESSING")
                 j = j + 1
