@@ -47,7 +47,6 @@ def smooth_epidermis(img,epidermis,background,mesophyll,ias):
     b = np.tile(a,(img.shape[2],img.shape[0],1))
     b = np.moveaxis(b,[0,1,2],[2,0,1])
     # Determine the lower edge of the spongy mesophyll (or whichever mesophyll is closest to bottom of image)
-    # FIX: hardcoded values
     c = (img==epidermis)
     d = (b*c)
     m_low = np.argmax(d, axis=1)
@@ -56,7 +55,6 @@ def smooth_epidermis(img,epidermis,background,mesophyll,ias):
     d = (b*c)
     v_low = np.argmax(d, axis=1)
     # Determine the lower edge of the epidermis
-    # FIX: harcoded values
     c = (img==epidermis)
     d = (b*c)
     e_low = np.argmax(d, axis=1)
@@ -84,7 +82,6 @@ def smooth_epidermis(img,epidermis,background,mesophyll,ias):
     epi_out = (epi_in==0)*1
     # Set all background identified as BG that lies within epidermal boundaries as IAS
     # Set all background identified as IAS that lies outside epidermal boundaries as BG
-    # FIX: hardcoded values
     img2 = np.array(img, copy=True)
     img2[(img2==ias)*(epi_out==1)] = background
     img2[(img2==background)*(epi_in==1)] = ias
@@ -132,7 +129,6 @@ def smooth_epidermis(img,epidermis,background,mesophyll,ias):
 
 def delete_dangling_epidermis(img,epidermis,background):
     # Remove 'dangling' epidermal pixels
-    # FIX: hardcoded epidermal pixel value (182)
     epid = (img==epidermis)
     epid_rmv_parts = np.array(epid, copy=True)
     for i in tqdm(range(0,epid_rmv_parts.shape[0])):
@@ -140,7 +136,6 @@ def delete_dangling_epidermis(img,epidermis,background):
     # Write an array of just the removed particles
     epid_parts = epid ^ epid_rmv_parts
     # Replace the small connected epidermal particles (< 800 px^2) with BG value
-    # FIX: hardcoded background pixel value (0)
     img[epid_parts==1] = background
     # Free up some memory
     del epid_rmv_parts
@@ -149,20 +144,13 @@ def delete_dangling_epidermis(img,epidermis,background):
 
 def dbl_pct_filt(arr):
     # Define percentile filter for clipping off artefactual IAS protrusions due to dangling epidermis
-    out = percentile_filter(
-        percentile_filter(
-            arr,
-            size=30,
-            percentile=10),
-        size=30,percentile=90)
+    out = percentile_filter(percentile_filter(arr,size=30,percentile=10),size=30,percentile=90)
     return out
 
 def min_max_filt(arr):
     # Define minimmum and maximum filters for clipping off artefactual IAS protrusions due to dangling epidermis
     # FIX: Perhaps make this variable? User input based?
-    out = minimum_filter(
-        maximum_filter(arr,20),
-        20)
+    out = minimum_filter(maximum_filter(arr,20),20)
     return out
 
 def check_array_orient(arr1,arr2):
@@ -191,7 +179,7 @@ def check_array_orient(arr1,arr2):
 
 def winVar(img, wlen):
     # Variance filter
-    wmean, wsqrmean = (cv2.boxFilter(x, -1, (wlen,wlen), borderType=cv2.BORDER_REFLECT)
+    wmean, wsqrmean = (cv2.boxFilter(x,-1,(wlen,wlen), borderType=cv2.BORDER_REFLECT)
                        for x in (img, img*img))
     return wsqrmean - wmean*wmean
 
@@ -207,13 +195,10 @@ def RFPredictCTStack(rf_transverse,gridimg_in, phaseimg_in, localthick_cellvein_
     dist_edge_FL = np.multiply(transform.rescale(dist_edge_FL,4),4)
     if dist_edge_FL.shape[1]>gridimg_in.shape[1]:
         dist_edge_FL = dist_edge_FL[:,0:gridimg_in.shape[1],:]
-
     # Define numpy array for storing class predictions
     RFPredictCTStack_out = np.empty(gridimg_in.shape, dtype=np.float64)
-
     # Define empty numpy array for feature layers (FL)
     FL = np.empty((gridimg_in.shape[1],gridimg_in.shape[2],num_feature_layers), dtype=np.float64)
-
     for j in tqdm(range(0,gridimg_in.shape[0])):
         # Populate FL array with feature layers using custom filters, etc.
         FL[:,:,0] = gridimg_in[j,:,:]
@@ -290,7 +275,6 @@ def check_images(prediction_prob_imgs,prediction_imgs,observed_imgs,FL_imgs,phas
     print("\nSee 'results/yourfoldername/qc' folder for quality control images\n")
 
 def reshape_arrays(class_prediction_prob,class_prediction,Label_test,FL_test,label_stack):
-    # print("***RESHAPING ARRAYS***")
     # Reshape arrays for plotting images of class probabilities, predicted classes, observed classes, and feature layer of interest
     prediction_prob_imgs = class_prediction_prob.reshape((
         -1,
@@ -321,9 +305,6 @@ def make_conf_matrix(L_test,class_p,folder_name):
     # FIX: better format the output of confusion matrix to .txt file
     df = pd.crosstab(L_test, class_p, rownames=['Actual'], colnames=['Predicted'])
     print(tabulate(df, headers='keys', tablefmt='pqsl'))
-    # convert to np array and then np.savetxt("name", data)
-    # npdf = df.values
-    # np.savetxt('../results/ConfusionMatrix.txt',npdf,fmt='%.4i',header='Confusion Matrix')
     df.to_csv('../results/'+folder_name+'/ConfusionMatrix.txt',header='Predicted', index='Actual', sep=' ', mode='w')
 
 def make_normconf_matrix(L_test,class_p,folder_name):
@@ -331,34 +312,26 @@ def make_normconf_matrix(L_test,class_p,folder_name):
     # FIX: better format the output of confusion matrix to .txt file
     df = pd.crosstab(L_test, class_p, rownames=['Actual'], colnames=['Predicted'], normalize='index')
     print(tabulate(df, headers='keys', tablefmt='pqsl'))
-    # convert to np array and then np.savetxt("name", data)
-    # npdf = df.values
-    # np.savetxt('../results/NormalizedConfusionMatrix.txt',npdf,fmt='%.4e',header='Normalized Confusion Matrix')
     df.to_csv('../results/'+folder_name+'/NormalizedConfusionMatrix.txt',header='Predicted', index='Actual', sep=' ', mode='w')
 
 def predict_testset(rf_t,FL_test):
     # predict single slices from dataset
-    # Make prediction on test set
     print("***GENERATING PREDICTED STACK***")
     class_prediction = rf_t.predict(FL_test)
     class_prediction_prob = rf_t.predict_proba(FL_test)
-
     return class_prediction, class_prediction_prob
 
 def print_feature_layers(rf_t,folder_name):
     # Print feature layer importance
-    # See RFLeafSeg module for corresponding feature layer types
     file = open('../results/'+folder_name+'/FeatureLayer.txt','w')
     file.write('Our OOB prediction of accuracy for is: {oob}%'.format(oob=rf_t.oob_score_ * 100)+'\n')
     feature_layers = range(0,len(rf_t.feature_importances_))
     for fl, imp in zip(feature_layers, rf_t.feature_importances_):
-        #print('Feature_layer {fl} importance: {imp}'.format(fl=fl, imp=imp))
         file.write('Feature_layer {fl} importance: {imp}'.format(fl=fl, imp=imp)+'\n')
     file.close()
 
 def displayImages_displayDims(gr_s,pr_s,ls,lt_s,gp_train,gp_test,label_train,label_test):
     # FIX: print images to qc
-    # #plot some images for QC
     # for i in [label_test,label_train]:
     #     imgA = ls[i,:,:]
     #     imgA = Image.fromarray(imgA)
@@ -373,7 +346,6 @@ def displayImages_displayDims(gr_s,pr_s,ls,lt_s,gp_train,gp_test,label_train,lab
     # for i in [gp_train,gp_test]:
     #     io.imshow(lt_s[i,:,:])
     #     io.show()
-
     #check shapes of stacks to ensure they match
     print('Gridrec stack shape = ' + str(gr_s.shape))
     print('Phaserec stack shape = ' + str(pr_s.shape))
@@ -403,12 +375,9 @@ def LoadCTStack(gridimg_in,sub_slices,section):
         rot_i = 1
         rot_j = 0
         num_rot = 1
-
     # Load training label data
-
     labelimg_in_rot = np.rot90(gridimg_in, k=num_rot, axes=(rot_i,rot_j))
     labelimg_in_rot_sub = labelimg_in_rot[sub_slices,:,:]
-
     return(labelimg_in_rot_sub)
 
 def minFilter(img):
@@ -438,17 +407,13 @@ def GenerateFL2(gridimg_in, phaseimg_in, localthick_cellvein_in, sub_slices, sec
         rot_i = 1
         rot_j = 0
         num_rot = 1
-
     #match array dimensions again
     gridimg_in, phaseimg_in = match_array_dim(gridimg_in,phaseimg_in)
-
-    #change back 'sub_slices' not 'sub_slicesVAL'...
     # Rotate stacks to correct section view and select subset of slices
     gridimg_in_rot = np.rot90(gridimg_in, k=num_rot, axes=(rot_i,rot_j))
     phaseimg_in_rot = np.rot90(phaseimg_in, k=num_rot, axes=(rot_i,rot_j))
     gridimg_in_rot_sub = gridimg_in_rot[sub_slices,:,:]
     phaseimg_in_rot_sub = phaseimg_in_rot[sub_slices,:,:]
-
     # Define distance from lower/upper image boundary
     dist_edge = np.ones(gridimg_in.shape)
     dist_edge[:,(0,1,2,3,4,gridimg_in.shape[1]-5,gridimg_in.shape[1]-4,gridimg_in.shape[1]-3,gridimg_in.shape[1]-2,gridimg_in.shape[1]-1),:] = 0
@@ -457,11 +422,8 @@ def GenerateFL2(gridimg_in, phaseimg_in, localthick_cellvein_in, sub_slices, sec
     dist_edge_FL = np.multiply(transform.rescale(dist_edge_FL,4,clip=True,preserve_range=True),4)
     if dist_edge_FL.shape[1]>gridimg_in.shape[1]:
         dist_edge_FL = dist_edge_FL[:,0:gridimg_in.shape[1],:]
-
     # Define empty numpy array for feature layers (FL)
     FL = np.empty((len(sub_slices),img_dim1,img_dim2,num_feature_layers), dtype=np.float64)
-
-    #get rid of '-1'
     # Populate FL array with feature layers using custom filters, etc.
     for i in tqdm(range(0,len(sub_slices))):
         FL[i,:,:,0] = gridimg_in_rot_sub[i,:,:]
@@ -501,8 +463,6 @@ def GenerateFL2(gridimg_in, phaseimg_in, localthick_cellvein_in, sub_slices, sec
         FL[i,:,:,34] = winVar(FL[i,:,:,20],128)
         FL[i,:,:,35] = winVar(FL[i,:,:,21],128)
     FL[:,:,:,36] = minFilter(FL[:,:,:,14])
-
-
     # Collapse training data to two dimensions
     FL_reshape = FL.reshape((-1,FL.shape[3]), order="F")
     return FL_reshape
@@ -531,14 +491,11 @@ def LoadLabelData(gridimg_in,sub_slices,section):
         rot_i = 1
         rot_j = 0
         num_rot = 1
-
     # Load training label data
     labelimg_in_rot = np.rot90(gridimg_in, k=num_rot, axes=(rot_i,rot_j))
     labelimg_in_rot_sub = labelimg_in_rot[sub_slices,:,:]
-
     # Collapse label data to a single dimension
     img_label_reshape = labelimg_in_rot_sub.ravel(order="F")
-
     # Encode labels as categorical variable
     img_label_reshape = labenc.fit_transform(img_label_reshape)
     return(img_label_reshape)
@@ -574,7 +531,6 @@ def save_trainmodel(rf_t,FL_train,FL_test,Label_train,Label_test,folder_name):
 
 def train_model(gr_s,pr_s,ls,lt_s,gp_train,gp_test,label_train,label_test):
     print("***GENERATING FEATURE LAYERS***")
-    #figure out how to make this step variable--change how many and which filters are used before running, or in input file
     #generate training and testing feature layer array
     FL_train_transverse = GenerateFL2(gr_s, pr_s, lt_s, gp_train, "transverse")
     FL_test_transverse = GenerateFL2(gr_s, pr_s, lt_s, gp_test, "transverse")
@@ -586,7 +542,6 @@ def train_model(gr_s,pr_s,ls,lt_s,gp_train,gp_test,label_train,label_test):
     # Define Random Forest classifier parameters and fit model
     rf_trans = RandomForestClassifier(n_estimators=50, verbose=True, oob_score=True, n_jobs=-1, warm_start=False) #, class_weight="balanced")
     rf_trans = rf_trans.fit(FL_train_transverse, Label_train)
-
     return rf_trans,FL_train_transverse,FL_test_transverse, Label_train, Label_test
 
 def match_array_dim_label(stack1,stack2):
@@ -599,7 +554,6 @@ def match_array_dim_label(stack1,stack2):
         stack1 = stack1[:,:,0:stack2.shape[2]]
     else:
         stack2 = stack2[:,:,0:stack1.shape[2]]
-
     return stack1, stack2
 
 def match_array_dim(stack1,stack2):
@@ -616,7 +570,6 @@ def match_array_dim(stack1,stack2):
         stack1 = stack1[:,:,0:stack2.shape[2]]
     else:
         stack2 = stack2[:,:,0:stack1.shape[2]]
-
     return stack1, stack2
 
 def local_thickness(im):
@@ -660,7 +613,7 @@ def Threshold_GridPhase_invert_down(grid_img, phase_img, Th_grid, Th_phase,folde
     #invert
     tmp_invert = invert(tmp)
     #downsample to 25%
-    #SUPPRESS WARNING HERE
+    #SUPPRESS
     tmp_invert_ds = transform.rescale(tmp_invert, 0.25)
     print("***SAVING IMAGE STACK***")
     #write as a .tif file in custom results folder
@@ -674,7 +627,6 @@ def openAndReadFile(filename):
     label_train_slices_subset = []
     label_test_slices_subset = []
     #opens file
-    #figure out nice way to handle any errors here
     myFile = open(filename, "r")
 	#reads a line
     filepath = str(myFile.readline()) #function to read ONE line at a time
@@ -717,17 +669,12 @@ def openAndReadFile(filename):
     return filepath,grid_name,phase_name,label_name,Th_grid,Th_phase,gridphase_train_slices_subset,gridphase_test_slices_subset,label_train_slices_subset,label_test_slices_subset,image_process_bool,train_model_bool,full_stack_bool,post_process_bool,epid_value,bg_value,meso_value,ias_value,folder_name
 
 def Load_images(fp,gr_name,pr_name,ls_name):
-    #image loading
-    # Set path to tiff stacks
-    #filepath = '../images/'
     print("***LOADING IMAGE STACKS***")
     # Read gridrec, phaserec, and label tif stacks
     gridrec_stack = io.imread(fp + gr_name)
     phaserec_stack = io.imread(fp + pr_name)
-    #Optional image loading, if you need to rotate images
-    #label_stack = np.rollaxis(io.imread(filepath + 'label_stack.tif'),2,0)
     label_stack = io.imread(fp + ls_name)
-    #Invert my label_stack, uncomment as needed
+    #FIX: Invert my label_stack, uncomment as needed
     label_stack = invert(label_stack)
     # Reorient label stack
     label_stack = check_array_orient(gridrec_stack,label_stack)
@@ -754,9 +701,6 @@ def performance_metrics(RFpred,test_slices,label_stack,label_slices,folder_name)
     np.savetxt('../results/'+folder_name+'/total_accuracy.txt',total_accuracy,fmt='%.4e',header='Total Accuracy')
     np.savetxt('../results/'+folder_name+'/class_precision.txt',class_precision,fmt='%.4e',header='Class Precision')
     np.savetxt('../results/'+folder_name+'/class_recall.txt',class_recall,fmt='%.4e',header='Class Recall')
-    # convert to np array and then np.savetxt("name", data)
-    # npdf = df.values
-    # np.savetxt('../results/ConfusionMatrix.txt',npdf,fmt='%.4i',header='Confusion Matrix')
 
 def load_fullstack(filename,folder_name):
     print("***LOADING FULL STACK PREDICTION***")
@@ -801,7 +745,6 @@ def main():
                         print("5. Go back")
                         selection2 = str(input("Select an option (type a number, press enter):\n"))
                         if selection2=="1": #load image stacks
-                            #manual entry
                             # filepath = "../images/"
                             # grid_name = "gridrec_stack_conc.tif"
                             # phase_name = "phaserec_stack_conc.tif"
@@ -1020,21 +963,6 @@ def main():
                 # FIX: add error handling here
                 #read input file and define variables
                 filepath,grid_name,phase_name,label_name,Th_grid,Th_phase,gridphase_train_slices_subset,gridphase_test_slices_subset,label_train_slices_subset,label_test_slices_subset,image_process_bool,train_model_bool,full_stack_bool,post_process_bool,epid_value,bg_value,meso_value,ias_value,folder_name = openAndReadFile("../settings/"+filenames[j])
-                #check for and possibly create repo for all results
-                # print(filepath)
-                # print(grid_name)
-                # print(phase_name)
-                # print(label_name)
-                # print(Th_grid)
-                # print(Th_phase)
-                # print(gridphase_train_slices_subset)
-                # print(gridphase_test_slices_subset)
-                # print(label_train_slices_subset)
-                # print(label_test_slices_subset)
-                # print(image_process_bool)
-                # print(train_model_bool)
-                # print(full_stack_bool)
-                # print(folder_name)
                 if os.path.exists("../results/" + folder_name) == False:
                     os.makedirs("../results/" + folder_name)
                 print("Your custom results folder exists or was created successfully.\nSee folder in 'ML_microCT/results/' directory.\n")

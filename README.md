@@ -3,8 +3,6 @@
 X-ray microcomputed tomography (microCT) is rapidly becoming a popular technique for measuring the 3D geometry of plant organs, such as roots, stems, leaves, flowers, and fruits. Due to the large size of these datasets (> 20 Gb per 3D image), along with the often irregular and complex geometries of many plant organs, image segmentation represents a substantial bottleneck in the scientific pipeline. Here, we are developing a Python module that utilizes machine learning to dramatically improve the efficiency of microCT image segmentation with minimal user input.
 
 ## Command Line Execution:
-### Changes with most recent update:
-Various improvements and bug fixes in both 'manual' and 'file I/O' mode.
 
 Once installed, ML_microCT can be run from the command line. This version includes both a 'manual' mode with user input at multiple points throughout image segmentation process as well as a file I/O method that runs the entire segmentation process without interruption.
 
@@ -20,3 +18,6 @@ Post-processing is now an optional step in the file I/O method. Post-processing 
 Post-processing now integrated with 'manual' mode only in 'MLmicroCT.py' script. Removes falsely predicted epidermis, false IAS and mesophyll predictions that fall outside the epidermis, false background predictions that fall inside the epidermis; still relies on hardcoded values for epidermis, background, IAS and palisade/spongy mesophyll--interactives are in the works. Improvements forthcoming, including post-processing integration with 'batch-mode'.
 
 Once you have a fully post-processed stack, you can generate a 2D mesh in .stl format. Then smooth this 2D surface and visualize segmented classes as separate, complementary volumes in 3D space. Currently requires 'smooth.py' file and changing lots of hardcoded values. Post-processing step is now an optional step in the file I/O method.
+
+### Changes with most recent update:
+Various improvements and bug fixes in both 'manual' and 'file I/O' mode.
