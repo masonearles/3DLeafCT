@@ -19,8 +19,12 @@ Now, once you have a full stack prediction or post-processed full stack predicit
 ## Most recent changes:
 #### (most recent)
 -Added generation of 2D mesh (.stil files) in manual mode.
+
 -Various improvements and bug fixes in both 'manual' and 'file I/O' mode.
+
 -Post-processing is now an optional step in the file I/O method. Post-processing has been updated to include parameters for pixel value of specific classes.
+
 -Now, every time a new scan is segmented all results and data related to this scan will be exported to a new folder with a user-generated name.
+
 -Introduced 'batch run' capability for file I/O method that allows one to segment multiple stacks, using multiple instruction files, without any interruption. Note, batch run will always be slightly risky as the program -may abort at any point, so this is not necessarily a recommended method.
 #### (oldest)
