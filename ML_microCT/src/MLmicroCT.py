@@ -25,6 +25,7 @@ import pandas as pd
 from scipy import misc
 from scipy.ndimage.filters import maximum_filter, median_filter, minimum_filter, percentile_filter
 from scipy.ndimage.morphology import distance_transform_edt
+import vtk
 # Suppress all warnings (not errors) by uncommenting next two lines of code
 import warnings
 warnings.filterwarnings("ignore")
@@ -708,6 +709,67 @@ def load_fullstack(filename,folder_name):
     rf = io.imread('../results/'+folder_name+'/'+filename)
     return rf
 
+def displayPixelvalues(stack):
+    pixelVals = np.unique(stack)
+    for i in range(0,len(pixelVals)):
+        print('Class '+str(i)+' has a pixel value of: '+str(pixelVals[i]))
+
+def tif_to_stl(filepath,filename,stl_classes):
+    # Set input filepath and filename
+    # input = '/Users/mattjenkins1/Desktop/Davis_2017/mach_lrn/ML_microCT/results/test1/fullstack_prediction.tif'
+    input = filepath+filename
+    for i in range(0,len(stl_classes)):
+        # Set output filepath and filename
+        hold = int(stl_classes[i])
+        output = filepath+'class'+str(hold)+'_mesh.stl'
+        print('...CONVERTING TIF TO STL...')
+        # Read TIFF file into VTK
+        readerVolume = vtk.vtkTIFFReader()
+        readerVolume.SetFileName(input)
+        readerVolume.Update()
+        print('\nThis step may take a few minutes\n')
+        # Threshold material of interest based value at index position (e.g. [2] = veins for this leaf)
+        index = np.unique(io.imread(input))[hold]
+        threshold = vtk.vtkImageThreshold()
+        threshold.SetInputConnection(readerVolume.GetOutputPort())
+        threshold.ThresholdBetween(index-1,index+1)  # keep only veins
+        threshold.ReplaceInOn()
+        threshold.SetInValue(0)  # set all values below 400 to 0
+        threshold.ReplaceOutOn()
+        threshold.SetOutValue(1)  # set all values above 400 to 1
+        threshold.Update()
+        # Use marching cubes to generate STL file from TIFF file
+        contour = vtk.vtkDiscreteMarchingCubes()
+        contour.SetInputConnection(threshold.GetOutputPort())
+        contour.GenerateValues(1, 1, 1)
+        contour.Update()
+        # Smooth the mesh
+        #for possible functions check out http://davis.lbl.gov/Manuals/VTK-4.5/classvtkSmoothPolyDataFilter.html#p9
+        smooth = vtk.vtkSmoothPolyDataFilter()
+        smooth.SetInputConnection(contour.GetOutputPort())
+        smooth.SetNumberOfIterations(1000)
+        smooth.BoundarySmoothingOn()
+        smooth.Update()
+        # Decimate the mesh; this removes vertices and fills holes
+        # You might also give this a try
+        # Could help for smoothing
+        # https://www.vtk.org/doc/nightly/html/classvtkDecimatePro.html
+        dec = vtk.vtkDecimatePro()
+        dec.SetInputConnection(smooth.GetOutputPort())
+        dec.SetTargetReduction(0.2) # Tries to reduce dataset to 80% of it's original size
+        dec.PreserveTopologyOn() # Tries to preserve topology
+        dec.Update()
+        print("See 'results/yourfoldername' for mesh files.")
+        # Write STL file
+        writer = vtk.vtkSTLWriter()
+        # use this line when NOT using decimate
+        # writer.SetInputConnection(smooth.GetOutputPort()) # Change "smooth" to "dec", for example, if you want to output the decimated STL file
+        # use this line when using decimate
+        writer.SetInputConnection(dec.GetOutputPort()) # Change "smooth" to "dec", for example, if you want to output the decimated STL file
+        writer.SetFileTypeToBinary()
+        writer.SetFileName(output)
+        writer.Write()
+
 def main():
     selection_ = "1"
     while selection_ != "3":
@@ -754,7 +816,7 @@ def main():
                             phase_name = raw_input("Enter filename of phase reconstruction .tif stack:\n")
                             label_name = raw_input("Enter filename of labeled .tif stack:\n")
                             if os.path.exists(filepath + grid_name) == False or os.path.exists(filepath + phase_name) == False or os.path.exists(filepath + label_name) == False:
-                                    print("Try again, at least some of the information you entered is incorrect.")
+                                print("Try again, at least some of the information you entered is incorrect.")
                             else:
                                 gridrec_stack, phaserec_stack, label_stack = Load_images(filepath,grid_name,phase_name,label_name)
                         elif selection2=="2": #generate binary threshold image, invert, downsample and save
@@ -775,7 +837,7 @@ def main():
                         elif selection2=="5": #go back one step
                             print("Going back one step...")
                         else:
-                            print("Not a valid choice.")
+                            print("\nNot a valid choice.\n")
                 elif selection=="2": #train model
                     selection3="1"
                     while selection3 != "5":
@@ -828,7 +890,7 @@ def main():
                         elif selection3=="5": #go back one step
                             print("Going back one step...")
                         else:
-                            print("Not a valid choice.")
+                            print("\nNot a valid choice.\n")
                 elif selection=="3": #examine prediction metrics on training dataset
                     # Print out of bag precition accuracy
                     hold = "1"
@@ -861,7 +923,7 @@ def main():
                         elif selection4=="3": #go back one step
                             print("Going back one step...")
                         else:
-                            print("Not a valid choice.")
+                            print("\nNot a valid choice.\n")
                 elif selection=="5": #predict all slices in 3d stack
                     selection5="1"
                     while selection5 != "3":
@@ -890,7 +952,7 @@ def main():
                         elif selection5=="3": #go back one step
                             print("Going back one step...")
                         else:
-                            print("Not a valid choice.")
+                            print("\nNot a valid choice.\n")
                 elif selection=="6": #post-processing
                     selection6="1"
                     while selection6 != "4":
@@ -900,43 +962,71 @@ def main():
                         print("3. Trait measurement")
                         print("4. Go back")
                         selection6 = str(input("Select an option (type a number, press enter):\n"))
-                        if selection6=="1": #post processing, smoothing and prediction correction
-                            try:
-                                folder_name
-                            except NameError:
-                                folder_name = str(raw_input("Enter unique title for folder containing results from the scan you want to process:\n"))
+                        if selection6=="1": #post processing, smoothing and some false prediction correction
+                            cog = 0
                             try:
                                 RFPredictCTStack_out
                             except NameError:
                                 name2 = raw_input("Enter filename for existing fullstack prediction (located in your custom results folder):\n")
-                                RFPredictCTStack_out = load_fullstack(name2,folder_name)
-                            print("\nIn order to complete post-processing you must manually complete the following steps:")
-                            print("1) Navigate to your custom results folder and open corresponding full stack prediction using ImageJ or FIJI.")
-                            print("2) Move reticle over image and note pixel values (range 0-255, displayed passively on the 'Developer Menu').\nRecord values for epidermis, background, lowermost mesophyll class, and intercellular air space pixels.\n")
-                            proceed = str(input("\nWould you like to proceed?\nEnter 1 for yes, or 2 for no:\n"))
-                            if proceed == "1":
-                                epid_value = int(input("Enter value for epidermis pixels:\n"))
-                                bg_value = int(input("Enter value for background pixels:\n"))
-                                meso_value = int(input("Enter value for mesophyll pixels closest to bottom edge of image:\n"))
-                                ias_value = int(input("Enter value for intercellular air space pixels:\n"))
-                            print("Post-processing...")
-                            step1 = delete_dangling_epidermis(RFPredictCTStack_out,epid_value,bg_value)
-                            processed = smooth_epidermis(step1,epid_value,bg_value,meso_value,ias_value)
-                            print("\nWould you like to save post processed stack?")
-                            hold = str(input("Enter 1 for yes, or 2 for no:\n"))
-                            if hold == "1":
-                                io.imsave("../results/"+folder_name+"/post_processed_fullstack.tif", processed)
-                                print("See results folder for 'post_processed_fullstack'")
-                            else:
-                                print("Okay. Going back.")
+                                if os.path.exists('../results/'+folder_name+'/'+name2) == False:
+                                    print("\nFilename incorrect, or file is not in your results folder. Try again.\n")
+                                    cog = 1
+                                else:
+                                    RFPredictCTStack_out = load_fullstack(name2,folder_name)
+                            if cog == 0:
+                                print("\nIn order to complete post-processing you must manually complete the following steps:")
+                                print("1) Navigate to your custom results folder and open corresponding full stack prediction using ImageJ or FIJI.")
+                                print("2) Move reticle over image and note pixel values (range 0-255, displayed on the 'Developer Menu').\nRecord values for epidermis, background, lowermost mesophyll class, and intercellular air space pixel classes.\n")
+                                proceed = str(input("Would you like to proceed?\nEnter 1 for yes, or 2 for no:\n"))
+                                if proceed == "1":
+                                    epid_value = int(input("Enter value for epidermis pixels:\n"))
+                                    bg_value = int(input("Enter value for background pixels:\n"))
+                                    meso_value = int(input("Enter value for mesophyll pixels closest to bottom edge of image:\n"))
+                                    ias_value = int(input("Enter value for intercellular air space pixels:\n"))
+                                    print("Post-processing...")
+                                    step1 = delete_dangling_epidermis(RFPredictCTStack_out,epid_value,bg_value)
+                                    processed = smooth_epidermis(step1,epid_value,bg_value,meso_value,ias_value)
+                                    print("\nWould you like to save post processed stack?")
+                                    hold = str(input("Enter 1 for yes, or 2 for no:\n"))
+                                    if hold == "1":
+                                        io.imsave("../results/"+folder_name+"/post_processed_fullstack.tif", processed)
+                                        print("See results folder for 'post_processed_fullstack'")
+                                        name3 = 'post_processed_fullstack.tif'
+                                    else:
+                                        print("Okay. Going back one step...")
+                                else:
+                                    print("Okay. Going back one step...")
                         elif selection6=="2": #export 3D mesh
-                            print("FIX: update generation of 3D mesh")
+                            # print("FIX: update generation of 3D mesh")
+                            mesh_filepath = '../results/'+folder_name+'/'
+                            stl_classes = []
+                            cog = 0
+                            try:
+                                processed
+                            except NameError:
+                                name3 = str(raw_input("Enter filename for existing fullstack prediction or post-processed fullstack prediction\n(located in your custom results folder):\n"))
+                                if os.path.exists(mesh_filepath+name3) == False:
+                                    print("\nFilename incorrect, or file is not in your results folder. Try again.\n")
+                                    cog = 1
+                                else:
+                                    processed = io.imread(mesh_filepath+name3)
+                            if cog == 0:
+                                print("\nDisplayed below are your dataset's class numbers and corresponding pixel values.")
+                                print("\nTo select which classes you would like to convert to a 2D mesh (.stl files)\nyou must manually complete the following steps:")
+                                print("1) Navigate to your custom results folder and open corresponding \nfull stack prediction using ImageJ or FIJI.")
+                                print("2) Move reticle over image and note pixel values (range 0-255, displayed \non the 'Developer Menu').\nRecord values for all desired pixel classes.\n")
+                                displayPixelvalues(processed)
+                                catch = str(raw_input("\nEnter class numbers for which you would like to generate an '.stl' file,\nin order separated by commas:\nExamples: '0,1,2,3' or '2,6'\n"))
+                                for z in catch.split(','):
+                                    z.strip()
+                                    stl_classes.append(z)
+                                tif_to_stl(mesh_filepath,name3,stl_classes)
                         elif selection6=="3": #trait measurement
                             print("FIX: update trait measurement")
                         elif selection6=="4": #go back one step
                             print("Going back one step...")
                         else:
-                            print("Not a valid choice.")
+                            print("\nNot a valid choice.\n")
                 elif selection=="7": #performance metrics
                     print("You selected option 7. This step needs updating!")
                     # FIX: should offer pre and post-processed scores
@@ -944,24 +1034,23 @@ def main():
                 elif selection=="8": #go back one step
                     print("Going back one step...")
                 else:
-                    print("Not a valid choice.")
+                    print("\nNot a valid choice.\n")
         elif selection_=="2":
             global filenames
             j = 0
             permission = 0
             filenames = []
-            catch = str(raw_input("Enter filename(s) of '.txt' instruction files, in order separated by commas:\nExamples: 'file_name.txt,file_2.txt'\n"))
+            catch = str(raw_input("Enter filename(s) of '.txt' instruction files, in order separated by commas:\nExample: 'file_name.txt,file_2.txt'\n"))
             for z in catch.split(','):
                 z.strip()
                 filenames.append(z)
             for i in range(0,len(filenames)):
                 if os.path.exists('../settings/'+filenames[i]) == False:
-                    print("\nAt least some of the information you entered is incorrect. Try again.")
+                    print("\nAt least some of the information you entered is incorrect. Try again.\n")
                     permission = 1
             while j < len(filenames) and permission == 0:
                 print('\nWorking on batch number: '+str(j+1)+'/'+str(len(filenames))+'\n')
-                # FIX: add error handling here
-                #read input file and define variables
+                #read input file and define lots of stuff
                 filepath,grid_name,phase_name,label_name,Th_grid,Th_phase,gridphase_train_slices_subset,gridphase_test_slices_subset,label_train_slices_subset,label_test_slices_subset,image_process_bool,train_model_bool,full_stack_bool,post_process_bool,epid_value,bg_value,meso_value,ias_value,folder_name = openAndReadFile("../settings/"+filenames[j])
                 if os.path.exists("../results/" + folder_name) == False:
                     os.makedirs("../results/" + folder_name)
@@ -969,7 +1058,6 @@ def main():
                 #load images
                 gridrec_stack, phaserec_stack, label_stack = Load_images(filepath,grid_name,phase_name,label_name)
                 if image_process_bool=="1":
-                    print("IMAGE PROCESSING")
                     #generate binary threshold image, invert, downsample and save
                     Threshold_GridPhase_invert_down(gridrec_stack,phaserec_stack,Th_grid,Th_phase,folder_name)
                     #run local thickness, upsample, save
@@ -1012,7 +1100,7 @@ def main():
                     print("***PREDICTING FULL STACK***")
                     RFPredictCTStack_out = RFPredictCTStack(rf_transverse,gridrec_stack, phaserec_stack, localthick_stack,"transverse")
                     #save predicted full stack
-                    print("***SAVING PREDICTED STACK***\nSee 'results' folder")
+                    print("***SAVING PREDICTED STACK***")
                     # hardcoded division number_of_classes right now, FIX
                     io.imsave('../results/'+folder_name+'/fullstack_prediction.tif', img_as_ubyte(RFPredictCTStack_out/len(np.unique(RFPredictCTStack_out[1]))))
                     # performance_metrics(RFPredictCTStack_out,gridphase_test_slices_subset,label_stack,label_test_slices_subset)
@@ -1030,9 +1118,9 @@ def main():
                     print("SKIPPED POST-PROCESSING")
                 j = j + 1
         elif selection_=="3":
-            print("Session Ended")
+            print("\nSession Ended.\n")
         else:
-            print("Not a valid choice.")
+            print("\nNot a valid choice.\n")
 
 if __name__ == '__main__':
     main()
