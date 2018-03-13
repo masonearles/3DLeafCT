@@ -5,20 +5,20 @@ X-ray microcomputed tomography (microCT) is rapidly becoming a popular technique
 
 ## Command Line Execution:
 
-Once installed, ML_microCT can be run from the command line. This version includes both a 'manual' mode with user input at multiple points throughout image segmentation process as well as a file I/O method that runs the entire segmentation process without interruption.
+Once installed, ML_microCT can be run from the command line. This version includes both a 'manual' mode with user input at multiple points throughout image segmentation process as well as a 'file I/O' method that runs the entire segmentation process without interruption.
 
 #### See 'ML_microCT_inst.rtf' for detailed instructions on running from command line.
 
 ## Post-processing Beta:
-Post-processing now integrated with 'manual' mode only in 'MLmicroCT.py' script. Removes falsely predicted epidermis, false IAS and mesophyll predictions that fall outside the epidermis, false background predictions that fall inside the epidermis; still relies on hardcoded values for epidermis, background, IAS and palisade/spongy mesophyll--interactives are in the works. Improvements forthcoming, including post-processing integration with 'batch-mode'.
+Post-processing is of full stack predictions is available in 'manual' mode and 'file I/O'  mode. Our pocess removes falsely predicted epidermis, false IAS and mesophyll predictions that fall outside the epidermis, false background predictions that fall inside the epidermis; still relies on hardcoded values for epidermis, background, IAS and palisade/spongy mesophyll--interactives are in the works. Improvements forthcoming, including post-processing integration with 'batch-mode'.
 
 Once you have a fully post-processed stack, you can generate a 2D mesh in .stl format. Then smooth this 2D surface and visualize segmented classes as separate, complementary volumes in 3D space. Currently requires 'smooth.py' file and changing lots of hardcoded values. Post-processing step is now an optional step in the file I/O method.
 
-Now, once you have a full stack prediction or post-processed full stack prediciton in your custom results folder, you can generate a 2D mesh of any or all classes.
-
 ## Most recent changes:
 #### (most recent)
--Added generation of 2D mesh (.stil files) in manual mode.
+-Performance metrics can now be calculated in 'manual' mode only. Metrics are available for both unprocessed full stack predictions as well as post-processed full stack predictions. Improvements forthcoming.
+
+-Generation of 2D mesh (.stil files) in manual mode.
 
 -Various improvements and bug fixes in both 'manual' and 'file I/O' mode.
 
