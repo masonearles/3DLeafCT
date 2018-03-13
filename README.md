@@ -12,13 +12,15 @@ Once installed, ML_microCT can be run from the command line. This version includ
 ## Post-processing Beta:
 Post-processing is of full stack predictions is available in 'manual' mode and 'file I/O'  mode. Our pocess removes falsely predicted epidermis, false IAS and mesophyll predictions that fall outside the epidermis, false background predictions that fall inside the epidermis; still relies on hardcoded values for epidermis, background, IAS and palisade/spongy mesophyll--interactives are in the works. Improvements forthcoming, including post-processing integration with 'batch-mode'.
 
-Once you have a fully post-processed stack, you can generate a 2D mesh in .stl format. Then smooth this 2D surface and visualize segmented classes as separate, complementary volumes in 3D space. Currently requires 'smooth.py' file and changing lots of hardcoded values. Post-processing step is now an optional step in the file I/O method.
+Once you have a fully post-processed stack, you can generate a 2D mesh in .stl format. Then smooth this 2D surface and visualize segmented classes as separate, complementary volumes in 3D space. Post-processing step is now an optional step in the file I/O method.
 
 ## Most recent changes:
 #### (most recent)
 -Performance metrics can now be calculated in 'manual' mode only. Metrics are available for both unprocessed full stack predictions as well as post-processed full stack predictions. Improvements forthcoming.
 
--Generation of 2D mesh (.stil files) in manual mode.
+-During generation of 2D mesh, you are now prompted with instructions for determining certain pixel values, then you identify these values and export '.stl' files only for desired pixel classes.
+
+-Generation of 2D mesh (.stil files) in manual mode. Currently requires 'smooth.py' and manualy changing lots of hardcoded values.
 
 -Various improvements and bug fixes in both 'manual' and 'file I/O' mode.
 
