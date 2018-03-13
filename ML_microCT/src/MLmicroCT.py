@@ -385,7 +385,7 @@ def minFilter(img):
     filtered = sp.ndimage.filters.minimum_filter(img, size = (3,1,1))
     return filtered
 
-def GenerateFL2(gridimg_in, phaseimg_in, localthick_cellvein_in, sub_slices, section):
+def GenerateFL2(gridimg_in,phaseimg_in,localthick_cellvein_in,sub_slices,section):
     # Generate feature layers based on grid/phase stacks and local thickness stack
     if(section=="transverse"):
         img_dim1 = gridimg_in.shape[1]
@@ -681,30 +681,33 @@ def Load_images(fp,gr_name,pr_name,ls_name):
     label_stack = check_array_orient(gridrec_stack,label_stack)
     return gridrec_stack, phaserec_stack, label_stack
 
-def performance_metrics(RFpred,test_slices,label_stack,label_slices,folder_name):
-    # FIX: better format the output of confusion matrix to .txt file
+def performance_metrics(stack,gp_test_slices,label_stack,label_test_slices,folder_name,tag):
     # generate absolute confusion matrix
-    conf_matrix = pd.crosstab(RFpred[test_slices,:,:].ravel(order="F"),label_stack[label_slices,:,].ravel(order="F"),rownames=['Actual'], colnames=['Predicted'])
-    #df.to_csv('../results/Absolute_performance.txt',header='Predicted', index='Actual', sep=' ', mode='w')
+    conf_matrix = pd.crosstab(stack[gp_test_slices,:,:].ravel(order="F"),label_stack[label_test_slices,:,].ravel(order="F"),rownames=['Actual'], colnames=['Predicted'])
     # generate normalized confusion matrix
-    conf_matrix_norm = pd.crosstab(RFpred[test_slices,:,:].ravel(order="F"),label_stack[label_slices,:,].ravel(order="F"), rownames=['Actual'], colnames=['Predicted'], normalize='index')
-    total_accuracy = float(np.diag(conf_matrix).sum())/float(RFpred[test_slices,:,:].sum())
-    class_precision = np.diag(conf_matrix)/np.sum(conf_matrix,1)
-    class_recall = np.diag(conf_matrix)/np.sum(conf_matrix,0)
-    print("See 'results' folder for performance metrics")
-    # FIX: printing performance metrics arrays in terminal
-    print("Total Accuracy\n")
-    print(total_accuracy)
-    print("Precision\n")
-    print(class_precision)
-    print("Recall\n")
-    print(class_recall)
-    np.savetxt('../results/'+folder_name+'/total_accuracy.txt',total_accuracy,fmt='%.4e',header='Total Accuracy')
-    np.savetxt('../results/'+folder_name+'/class_precision.txt',class_precision,fmt='%.4e',header='Class Precision')
-    np.savetxt('../results/'+folder_name+'/class_recall.txt',class_recall,fmt='%.4e',header='Class Recall')
+    conf_matrix_norm = pd.crosstab(stack[gp_test_slices,:,:].ravel(order="F"),label_stack[label_test_slices,:,].ravel(order="F"), rownames=['Actual'], colnames=['Predicted'], normalize='index')
+    # total acccuracy
+    total_testpixels = stack.shape[1]*stack.shape[2]*len(gp_test_slices)
+    # print("\n"+str(float(np.diag(conf_matrix).sum()))+"\n")
+    # print(total_testpixels)
+    total_accuracy = float(np.diag(conf_matrix).sum()) / total_testpixels
+    print("\nTotal accuracy is: "+str(total_accuracy*100)+"%\n")
+    precision = np.diag(conf_matrix)/np.sum(conf_matrix,1), "Precision"
+    recall = np.diag(conf_matrix)/np.sum(conf_matrix,0), "Recall"
+    print(precision)
+    print(recall)
+    if tag == "Unprocessed Full Stack Scores:\n":
+        with open('../results/'+folder_name+'/PerformanceMetrics.txt', 'w') as metrics_file:
+            metrics_file.truncate(0)
+            metrics_file.write(tag+'\nAbsolute precision: {x}%'.format(x=total_accuracy*100)+'\n')
+            metrics_file.close()
+    else:
+        with open('../results/'+folder_name+'/PerformanceMetrics.txt', 'a') as metrics_file:
+            metrics_file.write(tag+'\nAbsolute precision: {x}%'.format(x=total_accuracy*100)+'\n')
+            metrics_file.close()
 
 def load_fullstack(filename,folder_name):
-    print("***LOADING FULL STACK PREDICTION***")
+    # print("***LOADING FULL STACK PREDICTION***")
     #load the model from disk
     rf = io.imread('../results/'+folder_name+'/'+filename)
     return rf
@@ -854,7 +857,7 @@ def main():
                             label_train_slices_subset = []
                             label_test_slices_subset = []
                             print("***DEFINING IMAGE SUBSETS***")
-                            catch = str(raw_input("Enter slice numbers for grid-phase TRAINING slice(s) subset, in order separated by commas\nExamples: '72,350,621' or '0,1' or '14'\n"))
+                            catch = str(raw_input("Enter slice numbers for grid-phase TRAINING slice(s) subset, in order separated by commas:\nExamples: '72,350,621' or '0,1' or '14'\n"))
                             for z in catch.split(','):
                                 z.strip()
                                 gridphase_train_slices_subset.append(int(z))
@@ -1028,9 +1031,38 @@ def main():
                         else:
                             print("\nNot a valid choice.\n")
                 elif selection=="7": #performance metrics
-                    print("You selected option 7. This step needs updating!")
+                    # print("You selected option 7. This step needs updating!")
                     # FIX: should offer pre and post-processed scores
-                    # performance_metrics(RFPredictCTStack_out,gridphase_test_slices_subset,label_stack,label_test_slices_subset)
+                    cog = 0
+                    # FIX: add disclaimer and option to continue!
+                    try:
+                        RFPredictCTStack_out
+                    except NameError:
+                        name4 = raw_input("Enter filename for existing fullstack prediction (located in your custom results folder):\n")
+                        if os.path.exists('../results/'+folder_name+'/'+name4) == False:
+                            print("\nFilename incorrect, or file is not in your results folder. Try again.\n")
+                            cog = 1
+                        else:
+                            RFPredictCTStack_out = load_fullstack(name4,folder_name)
+                    if cog == 0:
+                        tag = "Unprocessed Full Stack Scores:\n"
+                        performance_metrics(RFPredictCTStack_out,gridphase_test_slices_subset,label_stack,label_test_slices_subset,folder_name,tag)
+                        proceed = str(input("Would you like to run performance metrics on a post-processed fullstack?\nEnter 1 for yes, or 2 for no:\n"))
+                        if proceed == "1":
+                            try:
+                                processed
+                            except NameError:
+                                name4 = raw_input("Enter filename for existing post-procssed fullstack prediction\n(located in your custom results folder):\n")
+                                if os.path.exists('../results/'+folder_name+'/'+name4) == False:
+                                    print("\nFilename incorrect, or file is not in your results folder. Try again.\n")
+                                    cog = 1
+                                else:
+                                    processed = load_fullstack(name4,folder_name)
+                            if cog == 0:
+                                tag = "\nPost-processed Full Stack Scores:\n"
+                                performance_metrics(processed,gridphase_test_slices_subset,label_stack,label_test_slices_subset,folder_name,tag)
+                        else:
+                            print("Okay. Going back one step...")
                 elif selection=="8": #go back one step
                     print("Going back one step...")
                 else:
