@@ -19,9 +19,6 @@ Once you have a fully post-processed stack, you can generate a 2D mesh in .stl f
 
 [logo]: https://github.com/masonearles/3DLeafCT/blob/add_changes/imgs_readme/leaf1.png "translucent epidermis with veins"
 
-2D mesh displayed in 3D space example:
-<div style="width:50%","height:50%">![alt text](https://github.com/masonearles/3DLeafCT/blob/add_changes/imgs_readme/leaf1.png)</div>
-
 Some leaf-traits may be extracted from full stack predictions, post-processed full stack predictions, and the '.stl' files generated from aforementioned full stacks.
 
 ## Most recent changes:
