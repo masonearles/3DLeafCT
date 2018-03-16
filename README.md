@@ -15,6 +15,9 @@ Post-processing of full stack predictions is available in 'manual' mode and 'fil
 Once you have a fully post-processed stack, you can generate a 2D mesh in .stl format. Then smooth this 2D surface and visualize segmented classes as separate, complementary volumes in 3D space. Post-processing step is now an optional step in the file I/O method.
 
 2D mesh example:
+![alt text][logo]
+
+[logo]: https://github.com/masonearles/3DLeafCT/blob/add_changes/imgs_readme/leaf1.png "Logo Title Text 2"
 
 Some leaf-traits may be extracted from full stack predictions, post-processed full stack predictions, and the '.stl' files generated from aforementioned full stacks.
 
