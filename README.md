@@ -10,12 +10,20 @@ Once installed, ML_microCT can be run from the command line. This version includ
 #### See 'ML_microCT_inst.rtf' for detailed instructions on running from command line.
 
 ## Post-processing Beta:
-Post-processing is of full stack predictions is available in 'manual' mode and 'file I/O'  mode. Our pocess removes falsely predicted epidermis, false IAS and mesophyll predictions that fall outside the epidermis, false background predictions that fall inside the epidermis; still relies on hardcoded values for epidermis, background, IAS and palisade/spongy mesophyll--interactives are in the works. Improvements forthcoming, including post-processing integration with 'batch-mode'.
+Post-processing of full stack predictions is available in 'manual' mode and 'file I/O'  mode. Our pocess removes falsely predicted epidermis, false IAS and mesophyll predictions that fall outside the epidermis, false background predictions that fall inside the epidermis; still relies on hardcoded values for epidermis, background, IAS and palisade/spongy mesophyll--interactives are in the works. Improvements forthcoming, including post-processing integration with 'batch-mode'.
 
 Once you have a fully post-processed stack, you can generate a 2D mesh in .stl format. Then smooth this 2D surface and visualize segmented classes as separate, complementary volumes in 3D space. Post-processing step is now an optional step in the file I/O method.
 
+2D mesh example:
+
+Some leaf-traits may be extracted from full stack predictions, post-processed full stack predictions, and the '.stl' files generated from aforementioned full stacks.
+
 ## Most recent changes:
 #### (most recent)
+-Leaf trait measurement jupyter notebook added to 'ML_microCT/jupyter' directory. See here for leaf trait extraction from 3D numpy array data. Traits currently include mesophyll thickness, mesophyll surface area exposed to IAS relative to leaf surface area. Improvements and full integration forthcoming.
+
+-Some leaf trait measurement algorithms, that work on '.stl' meshes, now implemented in 'smoot_stl.py' and 'vtk_tif_to_stl.py' in 'ML_microCT/src/' directory. Improvements and full integration forthcoming.
+
 -Performance metrics can now be calculated in 'manual' mode only. Metrics are available for both unprocessed full stack predictions as well as post-processed full stack predictions. Improvements forthcoming.
 
 -During generation of 2D mesh, you are now prompted with instructions for determining certain pixel values, then you identify these values and export '.stl' files only for desired pixel classes.
