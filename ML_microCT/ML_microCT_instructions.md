@@ -18,7 +18,7 @@ Contents of folder should be exactly:
 
 1) Populate image folder with:  
 grid reconstructed microCT tiff image stack (e.g. from [TomoPy](https://github.com/tomopy/tomopy))  
-phase reconstructed tiff image stack [TomoPy](https://github.com/tomopy/tomopy)  
+phase reconstructed tiff image stack (e.g. from [TomoPy](https://github.com/tomopy/tomopy))  
 labeled images tiff image stack (e.g. using [Fiji](https://fiji.sc/))  
 2) In 'settings’ folder open ‘input_key.txt’ file  
 ‘input_key.txt’ is a reference key for the architecture or your .txt file of instructions (optional)  
