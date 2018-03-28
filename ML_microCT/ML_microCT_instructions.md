@@ -17,7 +17,7 @@ Contents of folder should be exactly:
 #### Prepare your images and (optional) .txt file instructions
 
 1) Populate image folder with:  
-grid reconstructed (using FIJI) tiff image stack  
+grid reconstructed microCT tiff image stack (e.g. from [TomoPy](https://github.com/tomopy/tomopy))
 phase reconstructed (using FIJI) tiff image stack  
 labeled images (using FIJI) tiff image stack  
 2) In 'settings’ folder open ‘input_key.txt’ file  
@@ -83,7 +83,7 @@ Folder will exist or be created in 'results/' directory.
 7) Optional: Choose 7 for ‘Calculate performance metrics’
 **requires presence of full stack prediction stack in results folder
 Follow instructions for confusion matrix and normalized confusion matrix for full stack prediction and (optionally) post-processed full stack. Will also save absolute precision scores to 'PerformanceMetrics.txt' in your results folder.
-8) Choose 8 for ‘Go back’ to go back one step
+8) Choose 8 for ‘Go back’ to go back one step  
 
 **These instructions are not complete. Updated instructions are posted periodically.
 
@@ -91,6 +91,6 @@ Follow instructions for confusion matrix and normalized confusion matrix for ful
 1) Enter exact filename(s) of your .txt file(s), following instructions. File(s) should be in 'settings’ folder.
 Program will execute all desired steps.
 See ‘results/’ directory for your folder and all relevant results.
-Performance metrics can only be accessed in 'manual mode'
+Performance metrics can only be accessed in 'manual mode'  
 
 **These instructions are not complete. Updated instructions are posted periodically.
