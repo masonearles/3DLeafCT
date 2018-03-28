@@ -1,5 +1,5 @@
 #  ML_microCT:
-## Random Forest machine learning for the quanitification and visualization of various plant anatomy
+## Random Forest machine learning for the quanitification and visualization of various plant anatomical feature from X-ray microCT
 last edited by: M. Jenkins
 03.26.2018
 
@@ -8,13 +8,13 @@ last edited by: M. Jenkins
 #### Check out ML_microCT folder
 
 Contents of folder should be exactly:
-‘settings’ folder
-‘images’ folder
-‘src’ folder
-‘results’ folder
-'jupyter' folder
-‘ML_microCT_instructions.md’ file
-'pre_processing.md' file
+‘settings’ folder  
+‘images’ folder  
+‘src’ folder  
+‘results’ folder  
+'jupyter' folder  
+‘ML_microCT_instructions.md’ file  
+'pre_processing.md' file  
 
 #### Prepare your images and (optional) .txt file instructions
 
