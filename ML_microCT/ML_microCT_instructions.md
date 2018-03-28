@@ -1,13 +1,11 @@
 #  ML_microCT:
 ## Random Forest machine learning for the quanitification and visualization of various plant anatomical feature from X-ray microCT
-last edited by: M. Jenkins
-03.26.2018
 
 ## Instructions:
 
 #### Check out ML_microCT folder
 
-Contents of folder should be exactly:
+Contents of folder should be exactly:  
 ‘settings’ folder  
 ‘images’ folder  
 ‘src’ folder  
@@ -18,15 +16,15 @@ Contents of folder should be exactly:
 
 #### Prepare your images and (optional) .txt file instructions
 
-1) Populate image folder with:
-grid reconstructed (using FIJI) tiff image stack
-phase reconstructed (using FIJI) tiff image stack
-labeled images (using FIJI) tiff image stack
-2) In 'settings’ folder open ‘input_key.txt’ file
-‘input_key.txt’ is a reference key for the architecture or your .txt file of instructions (optional)
-**note a .txt file is required to execute program in ‘Read from File Mode’
- 3) Open a new ‘.txt’ file and enter your instructions, line by line, using key as reference
- 4) Save your file a ’.txt’ file in ‘settings’ folder
+1) Populate image folder with:  
+grid reconstructed (using FIJI) tiff image stack  
+phase reconstructed (using FIJI) tiff image stack  
+labeled images (using FIJI) tiff image stack  
+2) In 'settings’ folder open ‘input_key.txt’ file  
+‘input_key.txt’ is a reference key for the architecture or your .txt file of instructions (optional)  
+**note a .txt file is required to execute program in ‘Read from File Mode’  
+ 3) Open a new ‘.txt’ file and enter your instructions, line by line, using key as reference  
+ 4) Save your file a ’.txt’ file in ‘settings’ folder  
 
 #### Compile and execute program
 
