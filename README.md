@@ -12,17 +12,21 @@ Once installed, ML_microCT can be run from the command line. This version includ
 ## Post-processing Beta:
 Post-processing of full stack predictions is available in 'manual' mode and 'file I/O'  mode. Our pocess removes falsely predicted epidermis, false IAS and mesophyll predictions that fall outside the epidermis, false background predictions that fall inside the epidermis; still relies on hardcoded values for epidermis, background, IAS and palisade/spongy mesophyll--interactives are in the works. Improvements forthcoming, including post-processing integration with 'batch-mode'.
 
-Once you have a fully post-processed stack, you can generate a 2D mesh in .stl format. Then smooth this 2D surface and visualize segmented classes as separate, complementary volumes in 3D space. Post-processing step is now an optional step in the file I/O method.
+Once you have a fully post-processed stack, you can generate a smooth 3D mesh of connected 2D shapes. In .stl format. Then, it is possible to smooth surfaces and then visualize segmented classes as separate, complementary volumes in 3D space. See image below:
 
-2D mesh example:
+Mesh example:
 ![alt text][logo]
 
 [logo]: https://github.com/masonearles/3DLeafCT/blob/add_changes/imgs_readme/leaf1.png "translucent epidermis with veins"
 
-Some leaf-traits may be extracted from full stack predictions, post-processed full stack predictions, and the '.stl' files generated from aforementioned full stacks.
+Some leaf-traits may be extracted from full stack predictions and/or post-processed full stack predictions. Trait extraction is currently in development stage--see relevant jupyter notebook, in 'ML_microCT/jupyter/' directory.
 
 ## Most recent changes:
 #### (most recent)
+-Updates to both instructions file and pre-processing file.
+
+-Updates to post-processing algorithm for improved prediction accuracy, overall. Now includes vein corrections.
+
 -Leaf trait measurement jupyter notebook added to 'ML_microCT/jupyter' directory. See here for leaf trait extraction from 3D numpy array data. Traits currently include mesophyll thickness, mesophyll surface area exposed to IAS relative to leaf surface area. Improvements and full integration forthcoming.
 
 -Some leaf trait measurement algorithms, that work on '.stl' meshes, now implemented in 'smoot_stl.py' and 'vtk_tif_to_stl.py' in 'ML_microCT/src/' directory. Improvements and full integration forthcoming.

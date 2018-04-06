@@ -41,35 +41,46 @@ num_feature_layers = 37 # grid and phase recon; plus gaussian blurs; plus hessia
 # Import label encoder
 labenc = LabelEncoder()
 
-def smooth_epidermis(img,epidermis,background,mesophyll,ias):
+def smooth_epidermis(img,epidermis,background,spongy,palisade,ias,vein):
     # FIX: clean this up, perhaps break into multiple functions
     # Define 3D array of distances from lower and upper epidermises
     a = range(0,img.shape[1])
     b = np.tile(a,(img.shape[2],img.shape[0],1))
     b = np.moveaxis(b,[0,1,2],[2,0,1])
     # Determine the lower edge of the spongy mesophyll (or whichever mesophyll is closest to bottom of image)
-    c = (img==epidermis)
+    c = (img==spongy)
     d = (b*c)
-    m_low = np.argmax(d, axis=1)
+    s_low = np.argmax(d, axis=1)
     # Determine the lower edge of the vascular bundle
-    c = (img==mesophyll)
+    c = (img==vein)
     d = (b*c)
     v_low = np.argmax(d, axis=1)
+    # Determine the lower edge of the IAS
+    c = (img==ias)
+    d = (b*c)
+    ias_low = np.argmax(d, axis=1)
     # Determine the lower edge of the epidermis
     c = (img==epidermis)
     d = (b*c)
     e_low = np.argmax(d, axis=1)
-    e_low = np.maximum(e_low, m_low) # Checks if mesophyll cells are below lower epidermis
-                                     # Changes lowest mesophyll pixel to epidermal class
-    e_low = np.maximum(e_low, v_low) # Similar to above, but with vascular bundle
+    e_low = np.maximum(e_low, s_low) # Changes lowest mesophyll pixel to epidermal class
+    e_low = np.maximum(e_low, ias_low) # Changes lowest IAS pixel to epidermal class
+    e_low = np.maximum(e_low, v_low) # Changes lowest vein pixel to epidermal class
     epi_low = np.zeros(img.shape)
     for z in tqdm(range(0,epi_low.shape[0])):
         for x in range(0,epi_low.shape[2]):
             epi_low[z,e_low[z,x],x] = 1
-    # Determine the upper edge of the epidermis
+
     b2 = np.flip(b,1)
-    d = (b2*c)
+    # Determine the upper edge of palisade
+    c = (img==palisade)
+    d = ((b2)*c)
+    p_up = np.argmax(d, axis=1)
+    # Determine the upper edge of epidermis
+    c = (img==epidermis)
+    d = ((b2)*c)
     e_up = np.argmax(d, axis=1)
+    e_up = np.maximum(e_up, p_up) # Changes highest palisade pixel to epidermal class
     epi_up = np.zeros(img.shape)
     for z in tqdm(range(0,epi_up.shape[0])):
         for x in range(0,epi_up.shape[2]):
@@ -81,52 +92,160 @@ def smooth_epidermis(img,epidermis,background,mesophyll,ias):
             epi_in[z,e_up[z,y]:e_low[z,y],y] = 1
     # Generate a binary stack with the pixels outside the epidermis set equal to 1
     epi_out = (epi_in==0)*1
-    # Set all background identified as BG that lies within epidermal boundaries as IAS
     # Set all background identified as IAS that lies outside epidermal boundaries as BG
+    # Set all IAS identified as BG that lies within epidermal boundaries as IAS
     img2 = np.array(img, copy=True)
     img2[(img2==ias)*(epi_out==1)] = background
     img2[(img2==background)*(epi_in==1)] = ias
+
     # Define 3D array of distances from lower and upper epidermises
     a = range(0,img2.shape[1])
     b = np.tile(a,(img2.shape[2],img2.shape[0],1))
     b = np.moveaxis(b,[0,1,2],[2,0,1])
-    # Determine the lower edge of the spongy mesophyll (or whichever is closest to bottom of image)
-    c = (img2==mesophyll)
+
+    # Do process again on img2:
+    # Determine the lower edge of the spongy mesophyll
+    c = (img2==spongy)
     d = (b*c)
-    m_low = np.argmax(d, axis=1)
+    s_low_2 = np.argmax(d, axis=1)
+    # Determine the lower edge of the IAS
+    c = (img2==ias)
+    d = (b*c)
+    ias_low_2 = np.argmax(d, axis=1)
+    # Determine the lower edge of the vascular bundle
+    c = (img2==vein)
+    d = (b*c)
+    v_low_2 = np.argmax(d, axis=1)
     # Determine the lower edge of the epidermis
     c = (img2==epidermis)
     d = (b*c)
-    e_low = np.argmax(d, axis=1)
-    e_low = np.maximum(e_low, m_low) # Checks if mesophyll cells are below lower epidermis
-    e_low = np.apply_along_axis(dbl_pct_filt, 0, arr = e_low)
-    e_low = np.apply_along_axis(min_max_filt, 0, arr = e_low)
-    e_low = np.apply_along_axis(min_max_filt, 0, arr = e_low)
-    epi_low = np.zeros(img2.shape)
+    e_low_2 = np.argmax(d, axis=1)
+    e_low_2 = np.maximum(e_low_2, ias_low_2) # Changes lowest ias pixel to epidermis
+    e_low_2 = np.maximum(e_low_2, s_low_2) # Changes lowest spongy pixel to epidermis
+    e_low_2 = np.maximum(e_low_2, v_low_2) # Changes lowest vein pixel to epidermis    e_low = np.apply_along_axis(dbl_pct_filt, 0, arr = e_low)
+    # e_low = np.apply_along_axis(min_max_filt, 0, arr = e_low)
+    # e_low = np.apply_along_axis(min_max_filt, 0, arr = e_low)
+    epi_low_2 = np.zeros(img2.shape)
     for z in tqdm(range(0,epi_low.shape[0])):
         for x in range(0,epi_low.shape[2]):
-            epi_low[z,e_low[z,x],x] = 1
-    # Determine the upper edge of the epidermis
+            epi_low_2[z,e_low[z,x],x] = 1
+
     b2 = np.flip(b,1)
-    d = (b2*c)
-    e_up = np.argmax(d, axis=1)
-    epi_up = np.zeros(img2.shape)
+    # Determine the upper edge of palisade
+    c = (img==palisade)
+    d = (b*c)
+    p_up_2 = np.argmin(d, axis=1)
+    # Determine the upper edge of epidermis
+    c = (img==epidermis)
+    d = ((b2)*c)
+    e_up_2 = np.argmax(d, axis=1)
+    e_up_2 = np.maximum(e_up, p_up)
+    e_up_2 = np.apply_along_axis(dbl_pct_filt, 0, arr = e_up_2)
+    epi_up_2 = np.zeros(img2.shape)
     for z in tqdm(range(0,epi_up.shape[0])):
         for x in range(0,epi_up.shape[2]):
-            epi_up[z,e_up[z,x],x] = 1
+            epi_up_2[z,e_up_2[z,x],x] = 1
     # Generate a binary stack with the pixels inside the epidermis set equal to 1
-    epi_in = np.zeros(img.shape, dtype=np.uint16)
+    epi_in_2 = np.zeros(img.shape, dtype=np.uint16)
     for y in tqdm(range(0,epi_in.shape[2])):
         for z in range(0,epi_in.shape[0]):
-            epi_in[z,e_up[z,y]:e_low[z,y],y] = 1
+            epi_in_2[z,e_up_2[z,y]:e_low_2[z,y],y] = 1
     # Generate a binary stack with the pixels outside the epidermis set equal to 1
-    epi_out = (epi_in==0)*1
-    # Set all background identified as BG that lies within epidermal boundaries as IAS
+    epi_out_2 = (epi_in_2==0)*1
     # Set all background identified as IAS that lies outside epidermal boundaries as BG
+    # Set all background identified as BG that lies within epidermal boundaries as IAS
     img3 = np.array(img2, copy=True)
     img3[(img3==ias)*(epi_out==1)] = background
     img3[(img3==background)*(epi_in==1)] = ias
     return img3
+
+def final_smooth(img,vein,spongy,palisade,epidermis,ias,bg):
+    vein_trace = (img==vein)
+    # Remove 'dangling' vein pixels
+    vein_rmv_parts = np.array(vein_trace, copy=True)
+    for i in tqdm(range(0,vein_rmv_parts.shape[0])):
+        vein_rmv_parts[i,:,:] = remove_small_objects(vein_trace[i,:,:], min_size=600)
+    # Write an array of just the removed particles
+    vein_parts = vein_trace ^ vein_rmv_parts
+    # Replace small vein parts with spongy mesophyll
+    img[vein_parts==1] = spongy
+    # Smooth veins with a double percent filter
+    vein_trace_pct = np.apply_along_axis(dbl_pct_filt, 0, arr = vein_rmv_parts)
+    invert_vt_pct = np.invert(vein_trace_pct)
+    #Set all mesophyll identified as vein that lies oustide vein boundary as spongy mesophyll
+    img4 = np.array(img, copy=True)
+    img4[(img4==vein)*(invert_vt_pct==1)] = spongy
+    #Set all vein identified as palisade or spongy that lies inside vein boundary as vein
+    img4[((img4==palisade)*(vein_trace_pct==1))] = vein
+    img4[(img4==spongy)*(vein_trace_pct==1)] = vein
+    # Define 3D array of distances from lower value of img4.shape[1] to median value
+    rangeA = range(0,img4.shape[1]/2)
+    tileA = np.tile(rangeA,(img4.shape[2],img4.shape[0],1))
+    tileA = np.moveaxis(tileA,[0,1,2],[2,0,1])
+    # Define 3D array of distances from median value of img4.shape[1] to upper value
+    rangeB = range(img4.shape[1]/2,img4.shape[1])
+    tileB = np.tile(rangeB,(img4.shape[2],img4.shape[0],1))
+    tileB = np.moveaxis(tileB,[0,1,2],[2,0,1])
+    tileB = np.flip(tileB,1)
+    #Make new 3d arrays of top half and lower half of image
+    hold = img4.shape[1]/2
+    img4conc1 = np.array(img4[:,0:hold,:], copy = True)
+    img4conc2 = np.array(img4[:,hold:img4.shape[1],:], copy = True)
+
+    # Determine the inner edge of the upper epidermis
+    c = (img4conc1==epidermis)
+    d = (tileA*c)
+    e_low_in = np.argmax(d, axis=1)
+    epi_low_in = np.zeros(img.shape)
+    for z in tqdm(range(0,epi_low_in.shape[0])):
+        for x in range(0,epi_low_in.shape[2]):
+            epi_low_in[z,e_low_in[z,x],x] = 1
+    # Determine the lower edge of the spongy mesophyll
+    c = (img4conc2==spongy)
+    d = (tileA*c)
+    m_up_in = np.argmax(d, axis=1)
+    # Determins the lower edge of vein
+    c = (img4conc2==vein)
+    d = (tileA*c)
+    v_up_in = np.argmax(d,axis=1)
+    # Determine the lower edge of ias
+    c = (img4conc2==ias)
+    d = (tileA*c)
+    ias_up_in = np.argmax(d, axis=1)
+    #Determine the inner edge of the lower epidermis
+    c = (img4conc2==epidermis)
+    d = (tileB*c)
+    e_up_in = np.argmax(d, axis=1)
+    e_up_in = np.maximum(e_up_in, m_up_in)
+    e_up_in = np.maximum(e_up_in, ias_up_in)
+    e_up_in = np.maximum(e_up_in, v_up_in)
+    epi_up_in = np.zeros(img.shape)
+    hold = img4.shape[1]/2
+    for z in tqdm(range(0,epi_up_in.shape[0])):
+        for x in range(0,epi_up_in.shape[2]):
+            epi_up_in[z,e_up_in[z,x]+hold,x] = 1
+    #add lower and upper halves
+    epi_inner_trace = np.add(epi_low_in,epi_up_in)
+    # Generate a binary stack with the pixels inside the inner epidermis trace set equal to 1
+    epi_inner_up = np.zeros(img4conc1.shape, dtype=np.uint16)
+    for y in tqdm(range(0,epi_inner_up.shape[2])):
+        for z in range(0,epi_inner_up.shape[0]):
+            epi_inner_up[z,:e_up_in[z,y],y] = 1
+
+    epi_inner_down = np.zeros(img4conc2.shape, dtype=np.uint16)
+    for y in tqdm(range(0,epi_inner_down.shape[2])):
+        for z in range(0,epi_inner_down.shape[0]):
+            epi_inner_down[z,:e_low_in[z,y],y] = 1
+    epi_inner_down = (epi_inner_down==0)*1
+    # Concatenate two halves of image
+    epi_inner_fill = np.concatenate((epi_inner_down,epi_inner_up), axis = 1)
+    epi_inner_fill_invert = (epi_inner_fill==0)*1
+    # Set all background identified as IAS that lies outside epidermal boundaries as BG
+    # Set all IAS identified as BG that lies within epidermal boundaries as IAS
+    img5 = np.array(img4, copy=True)
+    img5[(img4==ias)*(epi_inner_fill_invert==1)] = bg
+    img5[(img4==bg)*(epi_inner_fill==1)] = ias
+    return img5
 
 def delete_dangling_epidermis(img,epidermis,background):
     # Remove 'dangling' epidermal pixels
@@ -138,8 +257,18 @@ def delete_dangling_epidermis(img,epidermis,background):
     epid_parts = epid ^ epid_rmv_parts
     # Replace the small connected epidermal particles (< 800 px^2) with BG value
     img[epid_parts==1] = background
+    # Do this again in another dimension
+    epid2 = (epid_rmv_parts==1)
+    epid_rmv_parts2 = np.array(epid2, copy=True)
+    for j in range(0,epid_rmv_parts.shape[1]):
+        epid_rmv_parts2[:,j,:] = remove_small_objects(epid2[:,j,:], min_size=200)
+    # Write an array of just the removed particles, again
+    epid_parts2 = epid ^ epid_rmv_parts2
+    # Replace the small connected epidermal particles (< 800 px^2) with BG value
+    img[epid_parts2==1] = background
     # Free up some memory
     del epid_rmv_parts
+    del epid_rmv_parts2
     del epid
     return img
 
@@ -662,12 +791,14 @@ def openAndReadFile(filename):
     post_process_bool = str(myFile.readline().rstrip('\n'))
     epid_value = int(myFile.readline().rstrip('\n'))
     bg_value = int(myFile.readline().rstrip('\n'))
-    meso_value = int(myFile.readline().rstrip('\n'))
+    spongy_value = int(myFile.readline().rstrip('\n'))
+    palisade_value = int(myFile.readline().rstrip('\n'))
     ias_value = int(myFile.readline().rstrip('\n'))
+    vein_value = int(myFile.readline().rstrip('\n'))
     folder_name = str(myFile.readline()) #function to read ONE line at a time
     #closes the file
     myFile.close()
-    return filepath,grid_name,phase_name,label_name,Th_grid,Th_phase,gridphase_train_slices_subset,gridphase_test_slices_subset,label_train_slices_subset,label_test_slices_subset,image_process_bool,train_model_bool,full_stack_bool,post_process_bool,epid_value,bg_value,meso_value,ias_value,folder_name
+    return filepath,grid_name,phase_name,label_name,Th_grid,Th_phase,gridphase_train_slices_subset,gridphase_test_slices_subset,label_train_slices_subset,label_test_slices_subset,image_process_bool,train_model_bool,full_stack_bool,post_process_bool,epid_value,bg_value,spongy_value,palisade_value,ias_value,vein_value,folder_name
 
 def Load_images(fp,gr_name,pr_name,ls_name):
     print("***LOADING IMAGE STACKS***")
@@ -688,8 +819,6 @@ def performance_metrics(stack,gp_test_slices,label_stack,label_test_slices,folde
     conf_matrix_norm = pd.crosstab(stack[gp_test_slices,:,:].ravel(order="F"),label_stack[label_test_slices,:,].ravel(order="F"), rownames=['Actual'], colnames=['Predicted'], normalize='index')
     # total acccuracy
     total_testpixels = stack.shape[1]*stack.shape[2]*len(gp_test_slices)
-    # print("\n"+str(float(np.diag(conf_matrix).sum()))+"\n")
-    # print(total_testpixels)
     total_accuracy = float(np.diag(conf_matrix).sum()) / total_testpixels
     print("\nTotal accuracy is: "+str(total_accuracy*100)+"%\n")
     precision = np.diag(conf_matrix)/np.sum(conf_matrix,1), "Precision"
@@ -725,12 +854,12 @@ def tif_to_stl(filepath,filename,stl_classes):
         # Set output filepath and filename
         hold = int(stl_classes[i])
         output = filepath+'class'+str(hold)+'_mesh.stl'
-        print('...CONVERTING TIF TO STL...')
+        print('\n...CONVERTING TIF TO STL...')
         # Read TIFF file into VTK
         readerVolume = vtk.vtkTIFFReader()
         readerVolume.SetFileName(input)
         readerVolume.Update()
-        print('\nThis step may take a few minutes\n')
+        print('\nThis may take up to 15 minutes per file.\n')
         # Threshold material of interest based value at index position (e.g. [2] = veins for this leaf)
         index = np.unique(io.imread(input))[hold]
         threshold = vtk.vtkImageThreshold()
@@ -762,7 +891,7 @@ def tif_to_stl(filepath,filename,stl_classes):
         dec.SetTargetReduction(0.2) # Tries to reduce dataset to 80% of it's original size
         dec.PreserveTopologyOn() # Tries to preserve topology
         dec.Update()
-        print("See 'results/yourfoldername' for mesh files.")
+        print("See 'results/yourfoldername' for mesh file(s).")
         # Write STL file
         writer = vtk.vtkSTLWriter()
         # use this line when NOT using decimate
@@ -922,7 +1051,8 @@ def main():
                             print("Normalized Confusion Matrix")
                             make_normconf_matrix(Label_test,class_prediction,folder_name)
                             prediction_prob_imgs,prediction_imgs,observed_imgs,FL_imgs = reshape_arrays(class_prediction_prob,class_prediction,Label_test,FL_test,label_stack)
-                            check_images(prediction_prob_imgs,prediction_imgs,observed_imgs,FL_imgs,phaserec_stack,folder_name)
+                            #FIX: determine if feature layer images should be printed or not
+                            #check_images(prediction_prob_imgs,prediction_imgs,observed_imgs,FL_imgs,phaserec_stack,folder_name)
                         elif selection4=="3": #go back one step
                             print("Going back one step...")
                         else:
@@ -960,12 +1090,13 @@ def main():
                     selection6="1"
                     while selection6 != "4":
                         print("********_____POST-PROCESSING MENU_____********")
-                        print("1. Smooth epidermis and correct false predictions")
+                        print("1. Correct false predictions")
                         print("2. Generate a 3D mesh for some or all classes")
                         print("3. Trait measurement")
                         print("4. Go back")
                         selection6 = str(input("Select an option (type a number, press enter):\n"))
                         if selection6=="1": #post processing, smoothing and some false prediction correction
+                        # FIX: add in vein stuff and crossreference with updated jupyter stuff
                             cog = 0
                             try:
                                 RFPredictCTStack_out
@@ -984,11 +1115,14 @@ def main():
                                 if proceed == "1":
                                     epid_value = int(input("Enter value for epidermis pixels:\n"))
                                     bg_value = int(input("Enter value for background pixels:\n"))
-                                    meso_value = int(input("Enter value for mesophyll pixels closest to bottom edge of image:\n"))
+                                    spongy_value = int(input("Enter value for spongy mesophyll pixels:\n"))
+                                    palisade_value = int(input("Enter value for palisade mesophyll pixels:\n"))
                                     ias_value = int(input("Enter value for intercellular air space pixels:\n"))
+                                    vein_value = int(input("Enter value for vein pixels:\n"))
                                     print("Post-processing...")
                                     step1 = delete_dangling_epidermis(RFPredictCTStack_out,epid_value,bg_value)
-                                    processed = smooth_epidermis(step1,epid_value,bg_value,meso_value,ias_value)
+                                    step2 = smooth_epidermis(step1,epid_value,bg_value,spongy_value,palisade_value,ias_value,vein_value)
+                                    processed = final_smooth(step2,vein_value,spongy_value,palisade_value,epidermis_value,ias_value,bg_value)
                                     print("\nWould you like to save post processed stack?")
                                     hold = str(input("Enter 1 for yes, or 2 for no:\n"))
                                     if hold == "1":
@@ -1007,7 +1141,7 @@ def main():
                             try:
                                 processed
                             except NameError:
-                                name3 = str(raw_input("Enter filename for existing fullstack prediction or post-processed fullstack prediction\n(located in your custom results folder):\n"))
+                                name3 = str(raw_input("Enter filename for existing post-processed fullstack prediction\n(located in your custom results folder):\n"))
                                 if os.path.exists(mesh_filepath+name3) == False:
                                     print("\nFilename incorrect, or file is not in your results folder. Try again.\n")
                                     cog = 1
@@ -1031,10 +1165,7 @@ def main():
                         else:
                             print("\nNot a valid choice.\n")
                 elif selection=="7": #performance metrics
-                    # print("You selected option 7. This step needs updating!")
-                    # FIX: should offer pre and post-processed scores
                     cog = 0
-                    # FIX: add disclaimer and option to continue!
                     try:
                         RFPredictCTStack_out
                     except NameError:
@@ -1081,9 +1212,9 @@ def main():
                     print("\nAt least some of the information you entered is incorrect. Try again.\n")
                     permission = 1
             while j < len(filenames) and permission == 0:
-                print('\nWorking on batch number: '+str(j+1)+'/'+str(len(filenames))+'\n')
+                print('\nWorking on scan: '+str(j+1)+' of '+str(len(filenames))+'\n')
                 #read input file and define lots of stuff
-                filepath,grid_name,phase_name,label_name,Th_grid,Th_phase,gridphase_train_slices_subset,gridphase_test_slices_subset,label_train_slices_subset,label_test_slices_subset,image_process_bool,train_model_bool,full_stack_bool,post_process_bool,epid_value,bg_value,meso_value,ias_value,folder_name = openAndReadFile("../settings/"+filenames[j])
+                filepath,grid_name,phase_name,label_name,Th_grid,Th_phase,gridphase_train_slices_subset,gridphase_test_slices_subset,label_train_slices_subset,label_test_slices_subset,image_process_bool,train_model_bool,full_stack_bool,post_process_bool,epid_value,bg_value,spongy_value,palisade_value,ias_value,vein_value,folder_name = openAndReadFile("../settings/"+filenames[j])
                 if os.path.exists("../results/" + folder_name) == False:
                     os.makedirs("../results/" + folder_name)
                 print("Your custom results folder exists or was created successfully.\nSee folder in 'ML_microCT/results/' directory.\n")
@@ -1125,15 +1256,14 @@ def main():
                 make_normconf_matrix(Label_test,class_prediction,folder_name)
                 #reshape arrays
                 prediction_prob_imgs,prediction_imgs,observed_imgs,FL_imgs = reshape_arrays(class_prediction_prob,class_prediction,Label_test,FL_test,label_stack)
-                #print images to file
-                check_images(prediction_prob_imgs,prediction_imgs,observed_imgs,FL_imgs,phaserec_stack,folder_name)
+                #print images to file, FIX:
+                #check_images(prediction_prob_imgs,prediction_imgs,observed_imgs,FL_imgs,phaserec_stack,folder_name)
                 if full_stack_bool=="1":
                     #predict full stack
                     print("***PREDICTING FULL STACK***")
                     RFPredictCTStack_out = RFPredictCTStack(rf_transverse,gridrec_stack, phaserec_stack, localthick_stack,"transverse")
                     #save predicted full stack
                     print("***SAVING PREDICTED STACK***")
-                    # hardcoded division number_of_classes right now, FIX
                     io.imsave('../results/'+folder_name+'/fullstack_prediction.tif', img_as_ubyte(RFPredictCTStack_out/len(np.unique(RFPredictCTStack_out[1]))))
                     # performance_metrics(RFPredictCTStack_out,gridphase_test_slices_subset,label_stack,label_test_slices_subset)
                 else:
@@ -1142,9 +1272,10 @@ def main():
                     RFPredictCTStack_out = io.imread('../results/'+folder_name+'/fullstack_prediction.tif')
                     print("Post-processing...")
                     step1 = delete_dangling_epidermis(RFPredictCTStack_out,epid_value,bg_value)
-                    processed = smooth_epidermis(step1,epid_value,bg_value,meso_value,ias_value)
+                    step2 = smooth_epidermis(step1,epid_value,bg_value,spongy_value,palisade_value,ias_value,vein_value)
+                    processed = final_smooth(step2,vein_value,spongy_value,palisade_value,epid_value,ias_value,bg_value)
                     print("Saving post-processed full stack prediction...")
-                    io.imsave("../results/"+folder_name+"/post_processed_fullstack.tif", processed)
+                    io.imsave("../results/"+folder_name+"/post_processed_fullstack.tif", img_as_ubyte(processed))
                     print("See results folder for 'post_processed_fullstack.tif'")
                 else:
                     print("SKIPPED POST-PROCESSING")

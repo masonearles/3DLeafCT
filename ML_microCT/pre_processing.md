@@ -2,18 +2,21 @@
 last edited by: Matt Jenkins
 03.20.2018
 ### Following is for 6 classes (epidermis, IAS, background, palisade mesophyll, spongy mesophyll, vein/vascular bundle)
+**If only using one mesophyll class, simply fill both palisade and spongy mesophyll with same value using color picker**
 #### 0 - Before starting:
 - Make grid-phase stack
-        - Open cropped grid reconstruction stack and cropped phase reconstruction (orient with palisade mesophyll on TOP of image)
+        - Open cropped grid reconstruction tiff stack and cropped phase reconstruction (orient with palisade mesophyll on TOP of image)
             - save all grid reconstruction ROIs to manager for use on phase reconstruction as well
         - With threshold tool (cmd+shift+T), threshold grid and phase reconstructions at desired levels, respectively
         - Use ‘Process->Image calculator’ to add thresholded grid and phase reconstructions
         - Resulting thresholded stack is used for image pre-processing
-    - In- In resulting thresholded stack, navigate to number of first train or test slice
+    - In resulting thresholded stack, navigate to number of the first training or testing slice
+        **Repeat the follow for each testing and training slice**
         - Duplicate this image TWICE
-        - In one of the duplicate, we will call ‘dupA’, highlight all area and fill with white (value = 255) using color picker
+        - In one of the duplicates, we will call ‘dupA’, highlight all area and fill with white (value = 255) using color picker
             - This is going to be final product, keep this open
-        - In other duplicate, ‘dupB’ do steps 1-6
+        - In other duplicate, ‘dupB’ do steps 1-8, below
+
 #### 1 - Outline leaf area including epidermis on ‘dubB’; save to ROI manager
 - On ‘dupA’ fill this ROI with value 100 using color picker
 #### 2 - Outline leaf area NOT including epidermis on ‘dubB’; save to ROI manager
@@ -32,6 +35,13 @@ Palisade mesophyll = 150
 Spongy mesophyll = 125
 Vein/vascular bundle = 200
 Epidermis = 100
+#### 8 - Save this image to a folder containing only manually segmented testing and training images from current dataset
+**Do not forget to save all ROIs in an organized way that you can reference in the future, allowing trivial use of more or less classes**
 
-### *Do not forget to save all ROIs in an organized way that you can reference in the future, allowing trivial use of more or less classes
-### **When finished manually segmenting all training and testing slices, must save all .tif images as a .tif stack, noting index of each slice
+**When finished manually segmenting all training and testing slices, must save all .tif images as a .tif stack, noting index of each slice**
+    First, open FIJI or ImageJ
+    Select 'File->Import->Image Sequence...' then select the folder containing testing and training images
+    Images in folder will open as tiff stack
+    Save this tiff stack using 'File->Save As->Tiff...'
+    This is your labeled images tiff stack
+
