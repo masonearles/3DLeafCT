@@ -7,7 +7,7 @@ X-ray microcomputed tomography (microCT) is rapidly becoming a popular technique
 
 Once installed, ML_microCT can be run from the command line. This version includes both a 'manual' mode with user input at multiple points throughout image segmentation process as well as a 'file I/O' method that runs the entire segmentation process without interruption.
 
-#### See 'ML_microCT_inst.md' for detailed instructions on running from command line.
+#### See 'ML_microCT_instructions.md' for detailed instructions on running from command line.
 
 ## Post-processing Beta:
 Post-processing of full stack predictions is available in 'manual' mode and 'file I/O'  mode. Our pocess removes falsely predicted epidermis, false IAS and mesophyll predictions that fall outside the epidermis, false background predictions that fall inside the epidermis; still relies on hardcoded values for epidermis, background, IAS and palisade/spongy mesophyll--interactives are in the works. Improvements forthcoming, including post-processing integration with 'batch-mode'.
