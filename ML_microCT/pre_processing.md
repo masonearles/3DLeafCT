@@ -11,11 +11,11 @@ last edited by: Matt Jenkins
         - Use ‘Process->Image calculator’ to add thresholded grid and phase reconstructions
         - Resulting thresholded stack is used for image pre-processing
     - In resulting thresholded stack, navigate to number of the first training or testing slice
-        **Repeat the follow for each testing and training slice**
-        - Duplicate this image TWICE
+        - **Repeat the follow for each testing and training slice, one slice at a time**
+        - Duplicate this image TWICE, keep both duplicates open
         - In one of the duplicates, we will call ‘dupA’, highlight all area and fill with white (value = 255) using color picker
             - This is going to be final product, keep this open
-        - In other duplicate, ‘dupB’ do steps 1-8, below
+            - Do steps 1-8:
 
 #### 1 - Outline leaf area including epidermis on ‘dubB’; save to ROI manager
 - On ‘dupA’ fill this ROI with value 100 using color picker
@@ -29,19 +29,20 @@ last edited by: Matt Jenkins
 #### 6 - On resulting image from step 5 select all ROIs corresponding to veins and fill with value 200 using color picker
 #### 7 - Then, invert (cmd+shift+I) resulting image
 - On this image the following values will correspond to the following anatomy:
-Background = 255 (black)
-Intercellular air space (IAS) = 0 (white)
-Palisade mesophyll = 150
-Spongy mesophyll = 125
-Vein/vascular bundle = 200
-Epidermis = 100
+- Background = 255 (black)
+- Intercellular air space (IAS) = 0 (white)
+- Palisade mesophyll = 150
+- Spongy mesophyll = 125
+- Vein/vascular bundle = 200
+- Epidermis = 100
 #### 8 - Save this image to a folder containing only manually segmented testing and training images from current dataset
+
 **Do not forget to save all ROIs in an organized way that you can reference in the future, allowing trivial use of more or less classes**
 
 **When finished manually segmenting all training and testing slices, must save all .tif images as a .tif stack, noting index of each slice**
-    First, open FIJI or ImageJ
-    Select 'File->Import->Image Sequence...' then select the folder containing testing and training images
-    Images in folder will open as tiff stack
-    Save this tiff stack using 'File->Save As->Tiff...'
-    This is your labeled images tiff stack
+- First, open FIJI or ImageJ
+- Select 'File->Import->Image Sequence...' then select the folder containing testing and training images
+- Images in folder will open as tiff stack
+- Save this tiff stack using 'File->Save As->Tiff...'
+- This is your labeled images tiff stack
 
