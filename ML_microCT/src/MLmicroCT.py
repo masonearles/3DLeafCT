@@ -1122,7 +1122,7 @@ def main():
                                     print("Post-processing...")
                                     step1 = delete_dangling_epidermis(RFPredictCTStack_out,epid_value,bg_value)
                                     step2 = smooth_epidermis(step1,epid_value,bg_value,spongy_value,palisade_value,ias_value,vein_value)
-                                    processed = final_smooth(step2,vein_value,spongy_value,palisade_value,epidermis_value,ias_value,bg_value)
+                                    processed = final_smooth(step2,vein_value,spongy_value,palisade_value,epid_value,ias_value,bg_value)
                                     print("\nWould you like to save post processed stack?")
                                     hold = str(input("Enter 1 for yes, or 2 for no:\n"))
                                     if hold == "1":

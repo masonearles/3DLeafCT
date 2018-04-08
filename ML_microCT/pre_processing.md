@@ -5,11 +5,11 @@ last edited by: Matt Jenkins
 **If only using one mesophyll class, simply fill both palisade and spongy mesophyll with same value using color picker**
 #### 0 - Before starting:
 - Make grid-phase stack
-        - Open cropped grid reconstruction tiff stack and cropped phase reconstruction (orient with palisade mesophyll on TOP of image)
-            - save all grid reconstruction ROIs to manager for use on phase reconstruction as well
-        - With threshold tool (cmd+shift+T), threshold grid and phase reconstructions at desired levels, respectively
-        - Use ‘Process->Image calculator’ to add thresholded grid and phase reconstructions
-        - Resulting thresholded stack is used for image pre-processing
+    - Open cropped grid reconstruction tiff stack and cropped phase reconstruction (orient with palisade mesophyll on TOP of image)
+        - save all grid reconstruction ROIs to manager for use on phase reconstruction as well
+    - With threshold tool (cmd+shift+T), threshold grid and phase reconstructions at desired levels, respectively
+    - Use ‘Process->Image calculator’ to add thresholded grid and phase reconstructions
+    - Resulting thresholded stack is used for image pre-processing
     - In resulting thresholded stack, navigate to number of the first training or testing slice
         - **Repeat the follow for each testing and training slice, one slice at a time**
         - Duplicate this image TWICE, keep both duplicates open
