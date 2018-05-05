@@ -47,40 +47,80 @@ def smooth_epidermis(img,epidermis,background,spongy,palisade,ias,vein):
     a = range(0,img.shape[1])
     b = np.tile(a,(img.shape[2],img.shape[0],1))
     b = np.moveaxis(b,[0,1,2],[2,0,1])
-    # Determine the lower edge of the spongy mesophyll (or whichever mesophyll is closest to bottom of image)
+    # Determine the lower edge of the spongy mesophyll
     c = (img==spongy)
     d = (b*c)
     s_low = np.argmax(d, axis=1)
+    s_low_adjust = np.array(s_low, copy=True)
+    s_low_adjust[(s_low==img.shape[1])] = 0
+    # Determine the lower edge of the palisade mesophyll
+    c = (img==palisade)
+    d = (b*c)
+    p_low = np.argmax(d, axis=1)
+    p_low_adjust = np.array(p_low, copy=True)
+    p_low_adjust[(p_low==img.shape[1])] = 0
     # Determine the lower edge of the vascular bundle
     c = (img==vein)
     d = (b*c)
     v_low = np.argmax(d, axis=1)
+    v_low_adjust = np.array(v_low, copy=True)
+    v_low_adjust[(v_low==img.shape[1])] = 0
     # Determine the lower edge of the IAS
     c = (img==ias)
     d = (b*c)
     ias_low = np.argmax(d, axis=1)
+    ias_low_adjust = np.array(ias_low, copy=True)
+    ias_low_adjust[(ias_low==img.shape[1])] = 0
     # Determine the lower edge of the epidermis
     c = (img==epidermis)
     d = (b*c)
     e_low = np.argmax(d, axis=1)
-    e_low = np.maximum(e_low, s_low) # Changes lowest mesophyll pixel to epidermal class
-    e_low = np.maximum(e_low, ias_low) # Changes lowest IAS pixel to epidermal class
-    e_low = np.maximum(e_low, v_low) # Changes lowest vein pixel to epidermal class
+
+    e_low = np.maximum(e_low, s_low_adjust) # Changes lowest mesophyll pixel to epidermal class
+    e_low = np.maximum(e_low, p_low_adjust) # Changes lowest mesophyll pixel to epidermal class
+    e_low = np.maximum(e_low, ias_low_adjust) # Changes lowest IAS pixel to epidermal class
+    e_low = np.maximum(e_low, v_low_adjust) # Changes lowest vein pixel to epidermal class
+
     epi_low = np.zeros(img.shape)
     for z in tqdm(range(0,epi_low.shape[0])):
         for x in range(0,epi_low.shape[2]):
             epi_low[z,e_low[z,x],x] = 1
 
     b2 = np.flip(b,1)
+    # Determine the upper edge of spongy
+    c = (img==spongy)
+    d = ((b2)*c)
+    s_up = np.argmax(d, axis=1)
+    s_up_adjust = np.array(s_up, copy=True)
+    s_up_adjust[(s_up==0)] = img.shape[1]-1
     # Determine the upper edge of palisade
     c = (img==palisade)
     d = ((b2)*c)
     p_up = np.argmax(d, axis=1)
+    p_up_adjust = np.array(p_up, copy=True)
+    p_up_adjust[(p_up==0)] = img.shape[1]-1
+    # Determine the upper edge of ias
+    c = (img==ias)
+    d = ((b2)*c)
+    ias_up = np.argmax(d, axis=1)
+    ias_up_adjust = np.array(ias_up, copy=True)
+    ias_up_adjust[(ias_up==0)] = img.shape[1]-1
+    # Determine the upper edge of vein
+    c = (img==vein)
+    d = ((b2)*c)
+    v_up = np.argmax(d, axis=1)
+    v_up_adjust = np.array(v_up, copy=True)
+    v_up_adjust[(v_up==0)] = img.shape[1]-1
     # Determine the upper edge of epidermis
     c = (img==epidermis)
     d = ((b2)*c)
     e_up = np.argmax(d, axis=1)
-    e_up = np.maximum(e_up, p_up) # Changes highest palisade pixel to epidermal class
+
+    e_up = np.minimum(e_up, s_up_adjust) # Changes highest spongy pixel to epidermal class
+    e_up = np.minimum(e_up, p_up_adjust) # Changes highest palisade pixel to epidermal class
+    e_up = np.minimum(e_up, ias_up_adjust) # Changes highest ias pixel to epidermal class
+    e_up = np.minimum(e_up, v_up_adjust) # Changes highest vein pixel to epidermal class
+
     epi_up = np.zeros(img.shape)
     for z in tqdm(range(0,epi_up.shape[0])):
         for x in range(0,epi_up.shape[2]):
@@ -96,68 +136,12 @@ def smooth_epidermis(img,epidermis,background,spongy,palisade,ias,vein):
     # Set all IAS identified as BG that lies within epidermal boundaries as IAS
     img2 = np.array(img, copy=True)
     img2[(img2==ias)*(epi_out==1)] = background
+    img2[(img2==palisade)*(epi_out==1)] = background
+    img2[(img2==spongy)*(epi_out==1)] = background
+    img2[(img2==vein)*(epi_out==1)] = background
     img2[(img2==background)*(epi_in==1)] = ias
 
-    # Define 3D array of distances from lower and upper epidermises
-    a = range(0,img2.shape[1])
-    b = np.tile(a,(img2.shape[2],img2.shape[0],1))
-    b = np.moveaxis(b,[0,1,2],[2,0,1])
-
-    # Do process again on img2:
-    # Determine the lower edge of the spongy mesophyll
-    c = (img2==spongy)
-    d = (b*c)
-    s_low_2 = np.argmax(d, axis=1)
-    # Determine the lower edge of the IAS
-    c = (img2==ias)
-    d = (b*c)
-    ias_low_2 = np.argmax(d, axis=1)
-    # Determine the lower edge of the vascular bundle
-    c = (img2==vein)
-    d = (b*c)
-    v_low_2 = np.argmax(d, axis=1)
-    # Determine the lower edge of the epidermis
-    c = (img2==epidermis)
-    d = (b*c)
-    e_low_2 = np.argmax(d, axis=1)
-    e_low_2 = np.maximum(e_low_2, ias_low_2) # Changes lowest ias pixel to epidermis
-    e_low_2 = np.maximum(e_low_2, s_low_2) # Changes lowest spongy pixel to epidermis
-    e_low_2 = np.maximum(e_low_2, v_low_2) # Changes lowest vein pixel to epidermis    e_low = np.apply_along_axis(dbl_pct_filt, 0, arr = e_low)
-    # e_low = np.apply_along_axis(min_max_filt, 0, arr = e_low)
-    # e_low = np.apply_along_axis(min_max_filt, 0, arr = e_low)
-    epi_low_2 = np.zeros(img2.shape)
-    for z in tqdm(range(0,epi_low.shape[0])):
-        for x in range(0,epi_low.shape[2]):
-            epi_low_2[z,e_low[z,x],x] = 1
-
-    b2 = np.flip(b,1)
-    # Determine the upper edge of palisade
-    c = (img==palisade)
-    d = (b*c)
-    p_up_2 = np.argmin(d, axis=1)
-    # Determine the upper edge of epidermis
-    c = (img==epidermis)
-    d = ((b2)*c)
-    e_up_2 = np.argmax(d, axis=1)
-    e_up_2 = np.maximum(e_up, p_up)
-    e_up_2 = np.apply_along_axis(dbl_pct_filt, 0, arr = e_up_2)
-    epi_up_2 = np.zeros(img2.shape)
-    for z in tqdm(range(0,epi_up.shape[0])):
-        for x in range(0,epi_up.shape[2]):
-            epi_up_2[z,e_up_2[z,x],x] = 1
-    # Generate a binary stack with the pixels inside the epidermis set equal to 1
-    epi_in_2 = np.zeros(img.shape, dtype=np.uint16)
-    for y in tqdm(range(0,epi_in.shape[2])):
-        for z in range(0,epi_in.shape[0]):
-            epi_in_2[z,e_up_2[z,y]:e_low_2[z,y],y] = 1
-    # Generate a binary stack with the pixels outside the epidermis set equal to 1
-    epi_out_2 = (epi_in_2==0)*1
-    # Set all background identified as IAS that lies outside epidermal boundaries as BG
-    # Set all background identified as BG that lies within epidermal boundaries as IAS
-    img3 = np.array(img2, copy=True)
-    img3[(img3==ias)*(epi_out==1)] = background
-    img3[(img3==background)*(epi_in==1)] = ias
-    return img3
+    return img2
 
 def final_smooth(img,vein,spongy,palisade,epidermis,ias,bg):
     vein_trace = (img==vein)
@@ -176,54 +160,108 @@ def final_smooth(img,vein,spongy,palisade,epidermis,ias,bg):
     img4 = np.array(img, copy=True)
     img4[(img4==vein)*(invert_vt_pct==1)] = spongy
     #Set all vein identified as palisade or spongy that lies inside vein boundary as vein
-    img4[((img4==palisade)*(vein_trace_pct==1))] = vein
+    img4[(img4==palisade)*(vein_trace_pct==1)] = vein
     img4[(img4==spongy)*(vein_trace_pct==1)] = vein
     # Define 3D array of distances from lower value of img4.shape[1] to median value
     rangeA = range(0,img4.shape[1]/2)
     tileA = np.tile(rangeA,(img4.shape[2],img4.shape[0],1))
     tileA = np.moveaxis(tileA,[0,1,2],[2,0,1])
+    tileB = np.flip(tileA,1)
     # Define 3D array of distances from median value of img4.shape[1] to upper value
-    rangeB = range(img4.shape[1]/2,img4.shape[1])
-    tileB = np.tile(rangeB,(img4.shape[2],img4.shape[0],1))
-    tileB = np.moveaxis(tileB,[0,1,2],[2,0,1])
-    tileB = np.flip(tileB,1)
+    # rangeB = range(img4.shape[1]/2,img4.shape[1])
+    # tileB = np.tile(rangeB,(img4.shape[2],img4.shape[0],1))
+    # tileB = np.moveaxis(tileB,[0,1,2],[2,0,1])
+    # tileB = np.flip(tileB,1)
     #Make new 3d arrays of top half and lower half of image
     hold = img4.shape[1]/2
     img4conc1 = np.array(img4[:,0:hold,:], copy = True)
     img4conc2 = np.array(img4[:,hold:img4.shape[1],:], copy = True)
 
+    # Determine the inner edge of the upper spongy
+    c = (img4conc1==spongy)
+    d = (tileA*c)
+    s_up_in = np.argmin(d, axis=1)
+    s_up_in_adjust = np.array(s_up_in, copy=True)
+    s_up_in_adjust[(s_up_in==0)] = hold
+    # Determine the inner edge of the upper palisade
+    c = (img4conc1==palisade)
+    d = (tileA*c)
+    p_up_in = np.argmin(d, axis=1)
+    p_up_in_adjust = np.array(p_up_in, copy=True)
+    p_up_in_adjust[(p_up_in==0)] = hold
+    # Determine the inner edge of the upper ias
+    c = (img4conc1==ias)
+    d = (tileA*c)
+    ias_up_in = np.argmin(d, axis=1)
+    ias_up_in_adjust = np.array(ias_up_in, copy=True)
+    ias_up_in_adjust[(ias_up_in==0)] = hold
+    # Determine the inner edge of the upper vein
+    c = (img4conc1==vein)
+    d = (tileA*c)
+    v_up_in = np.argmin(d, axis=1)
+    v_up_in_adjust = np.array(v_up_in, copy=True)
+    v_up_in_adjust[(v_up_in==0)] = hold
     # Determine the inner edge of the upper epidermis
     c = (img4conc1==epidermis)
     d = (tileA*c)
-    e_low_in = np.argmax(d, axis=1)
-    epi_low_in = np.zeros(img.shape)
-    for z in tqdm(range(0,epi_low_in.shape[0])):
-        for x in range(0,epi_low_in.shape[2]):
-            epi_low_in[z,e_low_in[z,x],x] = 1
+    e_up_in = np.argmax(d, axis=1)
+
+    e_up_in = np.minimum(e_up_in, s_up_in_adjust)
+    e_up_in = np.minimum(e_up_in, p_up_in_adjust)
+    e_up_in = np.minimum(e_up_in, ias_up_in_adjust)
+    e_up_in = np.minimum(e_up_in, v_up_in_adjust)
+
+    epi_up_in = np.zeros(img.shape)
+    for z in range(0,epi_up_in.shape[0]):
+        for x in range(0,epi_up_in.shape[2]):
+            if x > 1:
+                if e_up_in[z,x]==0 or e_up_in[z,x]==hold:
+                    e_up_in[z,x] = e_up_in[z,x-1]
+                    epi_up_in[z,e_up_in[z,x],x] = 1
+                else:
+                    epi_up_in[z,e_up_in[z,x],x] = 1
+            else:
+                epi_up_in[z,e_up_in[z,x],x] = 1
+
     # Determine the lower edge of the spongy mesophyll
     c = (img4conc2==spongy)
-    d = (tileA*c)
-    m_up_in = np.argmax(d, axis=1)
+    d = (tileB*c)
+    s_low_in = np.argmin(d, axis=1)
     # Determins the lower edge of vein
     c = (img4conc2==vein)
-    d = (tileA*c)
-    v_up_in = np.argmax(d,axis=1)
+    d = (tileB*c)
+    p_low_in = np.argmin(d,axis=1)
     # Determine the lower edge of ias
     c = (img4conc2==ias)
-    d = (tileA*c)
-    ias_up_in = np.argmax(d, axis=1)
+    d = (tileB*c)
+    ias_low_in = np.argmin(d,axis=1)
+    # Determine the lower edge of vein
+    c = (img4conc2==vein)
+    d = (tileB*c)
+    v_low_in = np.argmin(d,axis=1)
     #Determine the inner edge of the lower epidermis
     c = (img4conc2==epidermis)
     d = (tileB*c)
-    e_up_in = np.argmax(d, axis=1)
-    e_up_in = np.maximum(e_up_in, m_up_in)
-    e_up_in = np.maximum(e_up_in, ias_up_in)
-    e_up_in = np.maximum(e_up_in, v_up_in)
-    epi_up_in = np.zeros(img.shape)
-    hold = img4.shape[1]/2
-    for z in tqdm(range(0,epi_up_in.shape[0])):
-        for x in range(0,epi_up_in.shape[2]):
-            epi_up_in[z,e_up_in[z,x]+hold,x] = 1
+    e_low_in = np.argmax(d, axis=1)
+    e_low_in_adjust = np.array(e_low_in, copy=True)
+    e_low_in_adjust[(e_low_in==hold)] = 0
+    e_low_in = np.maximum(e_low_in_adjust, s_low_in)
+    e_low_in = np.maximum(e_low_in_adjust, p_low_in)
+    e_low_in = np.maximum(e_low_in_adjust, ias_low_in)
+    e_low_in = np.maximum(e_low_in_adjust, v_low_in)
+
+    epi_low_in = np.zeros(img.shape)
+    for z in range(0,epi_low_in.shape[0]):
+        for x in range(0,epi_low_in.shape[2]):
+            if x > 1:
+                if e_low_in[z,x]==0 or e_low_in[z,x]==hold:
+                    e_low_in[z,x] = e_low_in[z,x-1]
+                    epi_low_in[z,e_low_in[z,x]+hold-1,x] = 1
+                else:
+                    epi_low_in[z,e_up_in[z,x]+hold-1,x] = 1
+            else:
+                epi_low_in[z,e_low_in[z,x]+hold-1,x] = 1
+
     #add lower and upper halves
     epi_inner_trace = np.add(epi_low_in,epi_up_in)
     # Generate a binary stack with the pixels inside the inner epidermis trace set equal to 1
@@ -238,13 +276,14 @@ def final_smooth(img,vein,spongy,palisade,epidermis,ias,bg):
             epi_inner_down[z,:e_low_in[z,y],y] = 1
     epi_inner_down = (epi_inner_down==0)*1
     # Concatenate two halves of image
-    epi_inner_fill = np.concatenate((epi_inner_down,epi_inner_up), axis = 1)
+    epi_inner_fill = np.concatenate((epi_inner_up,epi_inner_down), axis = 1)
     epi_inner_fill_invert = (epi_inner_fill==0)*1
     # Set all background identified as IAS that lies outside epidermal boundaries as BG
     # Set all IAS identified as BG that lies within epidermal boundaries as IAS
     img5 = np.array(img4, copy=True)
-    img5[(img4==ias)*(epi_inner_fill_invert==1)] = bg
-    img5[(img4==bg)*(epi_inner_fill==1)] = ias
+    img5[(img4==ias)*(epi_inner_fill==1)] = bg
+    img5[(img4==bg)*(epi_inner_fill_invert==1)] = ias
+
     return img5
 
 def delete_dangling_epidermis(img,epidermis,background):
