@@ -1,3 +1,6 @@
+# Repository has migrated to [here]
+[here]: https://github.com/mattjenkins3/3DLeafCT
+
 # Random Forest and microCT: Leaf traits in 3D
 
 ### Random forest segmentation for 3D microCT images
